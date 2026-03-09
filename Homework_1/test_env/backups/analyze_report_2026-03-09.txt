@@ -1,0 +1,43 @@
+================================================================
+  BÁO CÁO PHÂN TÍCH HỆ THỐNG
+  Thời gian : 2026-03-09 19:50:25
+  Website   : test_env/www
+  Thực hiện : tofu@DESKTOP-0HU8RIF
+================================================================
+
+--- [1] TỔNG QUAN ---
+  Tổng số file     : 3
+  Tổng số thư mục  : 1
+  Tổng dung lượng  : 0
+
+--- [2] THỐNG KÊ THEO ĐỊNH DẠNG FILE ---
+  Số lượng Dung lượng Đuôi file
+  -------- ----------   ---------
+  1        16B          .txt
+  1        50B          .php
+  1        32B          .html
+
+--- [3] TOP 5 THƯ MỤC LỚN NHẤT ---
+  Dung lượng Thư mục
+  ---------- -------
+
+--- [4] TOP 10 FILE LỚN NHẤT ---
+  Dung lượng File
+  ---------- ----
+  0          test_env/www/test.txt
+  0          test_env/www/test.php
+  0          test_env/www/test.html
+
+--- [5] THỐNG KÊ FILE PHP ---
+  Tổng số file .php : 1
+  Tổng dung lượng   : 0MB
+
+--- [6] 5 FILE SỬA ĐỔI GẦN NHẤT ---
+2026-03-09 19:45  test_env/www/test.txt
+2026-03-09 19:45  test_env/www/test.php
+2026-03-09 19:45  test_env/www/test.html
+
+================================================================
+  Báo cáo lưu tại: test_env/backups/analyze_report_2026-03-09.txt
+  Hoàn tất lúc   : 2026-03-09 19:50:25
+================================================================
