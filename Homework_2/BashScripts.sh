@@ -8,6 +8,12 @@
 # CẤU HÌNH
 # =================================================================
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+LOG_FILE="hardware_report_$(date '+%Y%m%d_%H%M%S').log"
+
+# Chuyển hướng toàn bộ output (stdout và stderr) ra cả màn hình và file log
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo -e "Đang thu thập thông tin và lưu log tại: $LOG_FILE\n"
 
 # Màu sắc cho output (tùy chọn)
 RED='\033[0;31m'
@@ -26,12 +32,6 @@ print_header() {
     echo -e "${BLUE}================================================================================${NC}"
     echo -e "${YELLOW}$1${NC}"
     echo -e "${BLUE}================================================================================${NC}"
-}
-
-# Hàm in tiêu đề phụ
-print_subheader() {
-    echo ""
-    echo -e "${GREEN}--- $1 ---${NC}"
 }
 
 # Hàm hiển thị thông tin trực tiếp ra màn hình
@@ -65,11 +65,11 @@ save_output "$(hostname)"
 save_output ""
 
 save_output "${GREEN}--- THÔNG TIN HỆ ĐIỀU HÀNH ---${NC}"
-if [ -f /etc/os-release ] then
+if [ -f /etc/os-release ]; then
     save_output "Tên Hệ điều hành: $(grep "^NAME=" /etc/os-release | cut -d'"' -f2)"
     save_output "Phiên bản Hệ điều hành: $(grep "^VERSION=" /etc/os-release | cut -d'"' -f2)"
     save_output "ID Hệ điều hành: $(grep "^ID=" /etc/os-release | cut -d'"' -f2)"
-fi;
+fi
 save_output ""
 
 save_output "${GREEN}--- THÔNG TIN KERNEL ---${NC}"
