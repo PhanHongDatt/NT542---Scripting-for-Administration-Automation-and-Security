@@ -1,0 +1,26 @@
+---
+- name: Configure /etc/hosts for MongoDB cluster
+  hosts: mongodb
+  become: yes
+  tasks:
+    - name: Add MongoDB nodes to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item }}"
+        state: present
+      loop:
+        - "172.31.66.74   mongo-01"
+        - "172.31.68.157  mongo-02"
+        - "172.31.67.144  mongo-03"
+        - "172.31.67.224  mongo-04"
+        - "172.31.67.134  mongo-05"
+
+    - name: Verify name resolution
+      command: ping -c 1 mongo-01
+      register: ping_result
+      changed_when: false
+
+    - name: Show ping result
+      debug:
+        msg: "{{ inventory_hostname }} can resolve mongo-01: OK"
+      when: ping_result.rc == 0

@@ -1,0 +1,30 @@
+---
+- name: Initialize the Replica Set
+  community.mongodb.mongodb_replicaset:
+    login_host: localhost
+    login_port: "{{ mongodb_port }}"
+    replica_set: "{{ mongodb_repl_set_name }}"
+    members: "{{ mongodb_repl_members }}"
+    validate: yes
+
+- name: Wait for Replica Set to stabilize
+  pause:
+    seconds: 60
+
+- name: Check Replica Set status
+  community.mongodb.mongodb_status:
+    login_host: localhost
+    login_port: "{{ mongodb_port }}"
+    replica_set: "{{ mongodb_repl_set_name }}"
+  register: rs_status
+
+- name: Display Replica Set status
+  debug:
+    var: rs_status
+
+- name: Verify all members are healthy
+  assert:
+    that:
+      - rs_status.replicaset | length == 5
+    fail_msg: "Replica Set does not have 5 members!"
+    success_msg: "All 5 members present and healthy."

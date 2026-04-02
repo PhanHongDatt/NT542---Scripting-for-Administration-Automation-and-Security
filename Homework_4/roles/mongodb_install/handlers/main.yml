@@ -1,0 +1,12 @@
+---
+- name: enable disable-thp
+  systemd:
+    name: disable-thp
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: restart mongod
+  systemd:
+    name: mongod
+    state: restarted

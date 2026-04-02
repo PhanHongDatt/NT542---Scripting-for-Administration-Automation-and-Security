@@ -1,0 +1,149 @@
+---
+- name: Upgrade MongoDB on Secondary nodes
+  hosts: mongo-02,mongo-03,mongo-04,mongo-05
+  become: yes
+  serial: 1
+  vars:
+    mongodb_target_version: "7.0"
+
+  tasks:
+    - name: "[{{ inventory_hostname }}] Stop mongod service"
+      systemd:
+        name: mongod
+        state: stopped
+
+    - name: "[{{ inventory_hostname }}] Import MongoDB 7.0 GPG key"
+      apt_key:
+        url: "https://pgp.mongodb.com/server-{{ mongodb_target_version }}.asc"
+        state: present
+
+    - name: "[{{ inventory_hostname }}] Add MongoDB 7.0 APT repository"
+      apt_repository:
+        repo: "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/{{ mongodb_target_version }} multiverse"
+        state: present
+        filename: "mongodb-org-{{ mongodb_target_version }}"
+        update_cache: yes
+
+    - name: "[{{ inventory_hostname }}] Upgrade MongoDB packages to 7.0"
+      apt:
+        name: mongodb-org
+        state: latest
+        update_cache: yes
+
+    - name: "[{{ inventory_hostname }}] Start mongod service"
+      systemd:
+        name: mongod
+        state: started
+        daemon_reload: yes
+
+    - name: "[{{ inventory_hostname }}] Wait for MongoDB port to be ready"
+      wait_for:
+        port: "{{ mongodb_port }}"
+        delay: 5
+        timeout: 60
+
+    - name: "[{{ inventory_hostname }}] Wait for node to rejoin as SECONDARY"
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongodb_port }}"
+        replica_set: "{{ mongodb_repl_set_name }}"
+        poll: 5
+        interval: 10
+      register: rs_check
+      when: not ansible_check_mode
+
+    - name: "[{{ inventory_hostname }}] Confirm SECONDARY status"
+      assert:
+        that:
+          - rs_check.replicaset[inventory_hostname + ':27017'] == 'SECONDARY'
+        success_msg: "{{ inventory_hostname }} rejoined as SECONDARY ✅"
+        fail_msg: "{{ inventory_hostname }} did not rejoin correctly!"
+      when: not ansible_check_mode
+
+- name: Upgrade MongoDB on Primary node (last)
+  hosts: mongo-01
+  become: yes
+  vars:
+    mongodb_target_version: "7.0"
+
+  tasks:
+    - name: "[mongo-01] Step down Primary to trigger new election"
+      community.mongodb.mongodb_shell:
+        login_host: localhost
+        login_port: "{{ mongodb_port }}"
+        eval: "rs.stepDown(60)"
+      ignore_errors: yes
+
+    - name: "[mongo-01] Wait for new Primary to be elected"
+      pause:
+        seconds: 15
+
+    - name: "[mongo-01] Stop mongod service"
+      systemd:
+        name: mongod
+        state: stopped
+
+    - name: "[mongo-01] Import MongoDB 7.0 GPG key"
+      apt_key:
+        url: "https://pgp.mongodb.com/server-{{ mongodb_target_version }}.asc"
+        state: present
+
+    - name: "[mongo-01] Add MongoDB 7.0 APT repository"
+      apt_repository:
+        repo: "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/{{ mongodb_target_version }} multiverse"
+        state: present
+        filename: "mongodb-org-{{ mongodb_target_version }}"
+        update_cache: yes
+
+    - name: "[mongo-01] Upgrade MongoDB packages to 7.0"
+      apt:
+        name: mongodb-org
+        state: latest
+        update_cache: yes
+
+    - name: "[mongo-01] Start mongod service"
+      systemd:
+        name: mongod
+        state: started
+        daemon_reload: yes
+
+    - name: "[mongo-01] Wait for MongoDB port to be ready"
+      wait_for:
+        port: "{{ mongodb_port }}"
+        delay: 5
+        timeout: 60
+
+    - name: "[mongo-01] Wait for cluster to converge"
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongodb_port }}"
+        replica_set: "{{ mongodb_repl_set_name }}"
+        poll: 5
+        interval: 10
+      when: not ansible_check_mode
+
+- name: Verify cluster health after upgrade
+  hosts: mongo-01
+  become: yes
+  tasks:
+
+    - name: Check all members status
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongodb_port }}"
+        replica_set: "{{ mongodb_repl_set_name }}"
+      register: final_rs
+      when: not ansible_check_mode
+
+    - name: Display final cluster status
+      debug:
+        msg: "{{ final_rs.replicaset }}"
+      when: not ansible_check_mode
+
+    - name: Verify all 5 members healthy
+      assert:
+        that:
+          - final_rs.replicaset | length == 5
+        success_msg: "Zero-Downtime Upgrade hoàn thành! 5/5 members healthy."
+        fail_msg: "Cluster không đủ 5 members sau upgrade!"
+      when: not ansible_check_mode

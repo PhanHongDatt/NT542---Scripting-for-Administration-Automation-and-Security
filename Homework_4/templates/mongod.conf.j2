@@ -1,0 +1,18 @@
+# mongod.conf - Managed by Ansible
+storage:
+  dbPath: {{ mongodb_data_dir }}
+  wiredTiger:
+    engineConfig:
+      cacheSizeGB: {{ mongodb_wiredtiger_cache_gb }}
+
+systemLog:
+  destination: file
+  logAppend: true
+  path: {{ mongodb_log_dir }}/mongod.log
+
+net:
+  port: {{ mongodb_port }}
+  bindIp: {{ mongodb_bind_ip }}
+
+replication:
+  replSetName: {{ mongodb_repl_set_name }}

@@ -1,0 +1,20 @@
+---
+mongodb_version: "7.0"
+mongodb_port: 27017
+mongodb_repl_set_name: "rs0"
+mongodb_data_dir: "/var/lib/mongodb"
+mongodb_log_dir: "/var/log/mongodb"
+mongodb_bind_ip: "0.0.0.0"
+mongodb_wiredtiger_cache_gb: 1
+
+mongodb_repl_members:
+  - host: "mongo-01:27017"
+    priority: 10
+  - host: "mongo-02:27017"
+    priority: 8
+  - host: "mongo-03:27017"
+    priority: 6
+  - host: "mongo-04:27017"
+    priority: 4
+  - host: "mongo-05:27017"
+    priority: 2

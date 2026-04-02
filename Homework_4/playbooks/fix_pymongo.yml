@@ -1,0 +1,17 @@
+---
+- name: Upgrade pymongo
+  hosts: mongodb
+  become: yes
+  tasks:
+    - name: Install pip3 via apt
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Install pymongo 4+ via pip3
+      pip:
+        name: pymongo
+        version: ">=4.0"
+        state: present
+        executable: pip3

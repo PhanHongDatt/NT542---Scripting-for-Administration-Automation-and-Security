@@ -1,0 +1,53 @@
+---
+- name: "[{{ inventory_hostname }}] Stop mongod service"
+  systemd:
+    name: mongod
+    state: stopped
+
+- name: "[{{ inventory_hostname }}] Import MongoDB {{ mongodb_target_version }} GPG key"
+  apt_key:
+    url: "https://pgp.mongodb.com/server-{{ mongodb_target_version }}.asc"
+    state: present
+
+- name: "[{{ inventory_hostname }}] Add MongoDB {{ mongodb_target_version }} APT repository"
+  apt_repository:
+    repo: "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/{{ mongodb_target_version }} multiverse"
+    state: present
+    filename: "mongodb-org-{{ mongodb_target_version }}"
+    update_cache: yes
+
+- name: "[{{ inventory_hostname }}] Upgrade MongoDB packages to {{ mongodb_target_version }}"
+  apt:
+    name: mongodb-org
+    state: latest
+    update_cache: yes
+
+- name: "[{{ inventory_hostname }}] Start mongod service"
+  systemd:
+    name: mongod
+    state: started
+    daemon_reload: yes
+
+- name: "[{{ inventory_hostname }}] Wait for MongoDB port to be ready"
+  wait_for:
+    port: "{{ mongodb_port }}"
+    delay: 5
+    timeout: 60
+
+- name: "[{{ inventory_hostname }}] Wait for node to rejoin as SECONDARY"
+  community.mongodb.mongodb_status:
+    login_host: localhost
+    login_port: "{{ mongodb_port }}"
+    replica_set: "{{ mongodb_repl_set_name }}"
+    poll: 5
+    interval: 10
+  register: rs_check
+  when: not ansible_check_mode
+
+- name: "[{{ inventory_hostname }}] Confirm SECONDARY status"
+  assert:
+    that:
+      - rs_check.replicaset[inventory_hostname + ':27017'] == 'SECONDARY'
+    success_msg: "{{ inventory_hostname }} rejoined as SECONDARY ✅"
+    fail_msg: "{{ inventory_hostname }} did not rejoin correctly!"
+  when: not ansible_check_mode
