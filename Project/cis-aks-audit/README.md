@@ -11,19 +11,28 @@ Máy tính của bạn cần phải có sẵn những món sau:
 ### Bước 1.2: Lấy Source Code & Bỏ Private Key vào đúng chỗ
 1. Clone repo Git của dự án về máy: 
    ```bash
-   git clone <nhập_đường_dẫn_git_project_vào_đây>
+   git clone https://github.com/PhanHongDatt/NT542---Scripting-for-Administration-Automation-and-Security.git
    ```
 2. Trưởng nhóm đã gửi cho bạn một file chìa khoá tên là `aks-key`. Bạn phải chép nó vào **đúng đường dẫn có tính bảo mật** sau (để không lọt lên Github):
    ```text
    cis-aks-audit/terraform/.ssh/aks-key
    ```
 
-### Bước 1.3: Đăng nhập Azure & Xin cấp quyền
-1. Gõ lệnh sau trên trình duyệt và đăng nhập bằng Mail nhận credit sinh viên:
-   ```powershell
-   az login
-   ```
-2. Bạn phải báo trưởng nhóm thêm Email của bạn vào danh sách có quyền hạn **Contributor** vào ổ tài nguyên tên là `rg-cis-aks-audit`. Nếu không có quyền, bạn sẽ bị Azure đá văng khi gõ lệnh.
+### Bước 1.3: Xin Cấp Quyền & Đăng Nhập Azure
+
+**Dành Cho Trưởng Nhóm (Người nắm tài khoản xài tiền Azure):**
+1. Đăng nhập [portal.azure.com](https://portal.azure.com/), vào **Resource groups** -> Chọn `rg-cis-aks-audit`.
+2. Chọn menu **Access control (IAM)** bên trái -> Click `+ Add` -> Chọn **Add role assignment**.
+3. Tại tab *Role*, chọn thẻ **Privileged administrator roles** -> Gắn chức vụ **Contributor** -> Bấm Next.
+4. Tại tab *Members*, bấm `+ Select members` -> Lần lượt gõ và add mớ Email thực hành của các thành viên vào.
+5. Bấm **Review + assign** để hoàn tất cấp quyền truy cập.
+
+**Dành Cho Thành Viên (Thực hiện khi Sếp đã báo cấp quyền xong):**
+Từ Terminal của bạn, gõ lệnh báo danh với tổng đài Azure:
+```powershell
+az login
+```
+*(Trình duyệt sẽ bật lên, trình đúng email bạn đã báo sếp là lọt thẳng vào hệ thống dùng chung)*
 
 ### Bước 1.4: Tải Kubeconfig (Kết nối máy tính với AKS)
 Sau khi có quyền từ sếp, bạn gõ lệnh này để thọt dây sang hệ thống Azure và lấy chìa khoá điều khiển `kubectl` về nhét vào ổ C của bạn:
