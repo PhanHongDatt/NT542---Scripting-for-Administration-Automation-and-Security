@@ -65,3 +65,15 @@ Kiểm tra xem nó đã "tắt thở" thành công chưa bằng lệnh soi thôn
 az aks show --name aks-cis-audit --resource-group rg-cis-aks-audit --query powerState.code -o tsv
 ```
 *(Output phải hiện chình ình chữ `Stopped`)*
+
+---
+
+## 💻 3. Hướng Dẫn Truy Cập Vào Node (Instance) Để Audit
+
+Trong nhiều bài Lab/Audit từ CIS, bạn sẽ cần phải truy cập thẳng vào hệ điều hành bên trong của máy chủ ảo (Node). Thay vì SSH bằng chìa khoá phức tạp, bạn có thể dùng lệnh `kubectl debug` để mở một Terminal container nhảy trực tiếp vào Node.
+
+Chạy lệnh sau đây để thâm nhập vào Node đầu tiên trong cụm:
+```bash
+kubectl debug node/$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}') -it --image=mcr.microsoft.com/cbl-mariner/busybox:2.0
+```
+> *(Lệnh này sẽ tự động tìm tên Node, mở terminal Busybox, kết nối vào host và cho phép bạn truy xuất tệp tin hệ thống cũng như thực thi script Audit).*
