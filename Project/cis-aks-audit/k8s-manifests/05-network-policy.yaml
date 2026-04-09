@@ -1,0 +1,25 @@
+# ============================================================================
+# 05-network-policy.yaml
+# NetworkPolicy default-deny-all cho namespace dev (zero-trust)
+#
+# Control 4.4.2: "Ensure that all Namespaces have Network Policies defined"
+#
+# Chiến lược test:
+#   - dev: CÓ NetworkPolicy (sẽ PASS)
+#   - staging: CỐ TÌNH KHÔNG CÓ NetworkPolicy (sẽ FAIL)
+# Audit script của nhóm phải detect được namespace staging thiếu policy.
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: dev
+  labels:
+    audit-test: "true"
+spec:
+  # Áp dụng cho mọi pod trong namespace dev
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  # Không định nghĩa ingress/egress rules = DENY ALL

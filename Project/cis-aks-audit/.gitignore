@@ -1,0 +1,26 @@
+# SSH Keys (Tối quan trọng)
+terraform/.ssh/aks-key
+
+# Terraform local state and modules
+**/.terraform/*
+
+# Terraform state files (KHÔNG push vì chứa thông tin nhạy cảm của Azure)
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude .tfvars vì chứa biến môi trường mật
+*.tfvars
+*.tfvars.json
+
+# Ignore override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Bỏ qua các file plan (được mã hoá)
+*tfplan*

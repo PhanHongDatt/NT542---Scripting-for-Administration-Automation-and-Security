@@ -1,0 +1,22 @@
+# ============================================================================
+# 01-namespaces.yaml
+# Tạo namespaces để test isolation và audit namespace separation
+# Controls phục vụ: 4.4.2 (Network Policy per namespace), 4.6.1, 4.6.3
+# ============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    team: development
+    environment: dev
+    audit-test: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging
+  labels:
+    team: staging
+    environment: staging
+    audit-test: "true"

@@ -1,0 +1,39 @@
+# ============================================================================
+# 03-busybox-bad.yaml
+# Pod "xấu" - CỐ TÌNH vi phạm tất cả best practices
+# Dùng để verify audit scripts CÓ detect được vi phạm
+#
+# Vi phạm các controls:
+#   4.2.1 - privileged: true
+#   4.2.2 - hostPID: true
+#   4.2.3 - hostIPC: true
+#   4.2.4 - hostNetwork: true
+#   4.2.5 - allowPrivilegeEscalation: true
+#
+# LƯU Ý: Một số AKS cluster có Pod Security Admission policy chặn pod này.
+# Nếu pod không start, chạy:
+#   kubectl label namespace staging pod-security.kubernetes.io/enforce=privileged --overwrite
+# ============================================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-bad
+  namespace: staging
+  labels:
+    purpose: audit-test-violation
+    audit-compliance: "fail"
+spec:
+  hostPID: true      # Vi phạm control 4.2.2
+  hostIPC: true      # Vi phạm control 4.2.3
+  hostNetwork: true  # Vi phạm control 4.2.4
+  containers:
+    - name: busybox
+      image: busybox:1.36
+      command: ["sh", "-c", "sleep 3600"]
+      securityContext:
+        privileged: true                  # Vi phạm control 4.2.1
+        allowPrivilegeEscalation: true    # Vi phạm control 4.2.5
+      resources:
+        limits:
+          memory: "64Mi"
+          cpu: "100m"

@@ -1,0 +1,70 @@
+# ============================================================================
+# 02-nginx-good.yaml
+# Pod "tốt" - tuân thủ TẤT CẢ Pod Security best practices
+# Sẽ PASS các controls 4.2.1, 4.2.2, 4.2.3, 4.2.4, 4.2.5
+# Dùng để so sánh với busybox-bad trong báo cáo audit
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-good
+  namespace: dev
+  labels:
+    app: nginx-good
+    audit-compliance: "pass"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-good
+  template:
+    metadata:
+      labels:
+        app: nginx-good
+    spec:
+      # KHÔNG set hostPID, hostIPC, hostNetwork (mặc định là false - control 4.2.2, 4.2.3, 4.2.4)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged:latest
+        ports:
+        - containerPort: 8080
+        securityContext:
+          # Control 4.2.1: KHÔNG privileged
+          privileged: false
+          # Control 4.2.5: KHÔNG cho phép privilege escalation
+          allowPrivilegeEscalation: false
+          # Best practice: read-only root filesystem
+          readOnlyRootFilesystem: true
+          # Không chạy với user root
+          runAsNonRoot: true
+          runAsUser: 101
+          # Drop ALL capabilities
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+        # Nginx cần ghi vào /var/cache/nginx, /var/run, và /tmp - mount emptyDir
+        volumeMounts:
+          - name: cache
+            mountPath: /var/cache/nginx
+          - name: run
+            mountPath: /var/run
+          - name: tmp
+            mountPath: /tmp
+      volumes:
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
