@@ -1,0 +1,61 @@
+{
+  "section": "3.2",
+  "title": "Worker Node Kubelet Configuration",
+  "timestamp": "2026-04-10T08:03:03Z",
+  "results": [
+    {
+      "control": "3.2.1",
+      "status": "PASS",
+      "detail": "--anonymous-auth = false",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.2",
+      "status": "PASS",
+      "detail": "--authorization-mode = Webhook",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.3",
+      "status": "PASS",
+      "detail": "--client-ca-file = /etc/kubernetes/certs/ca.crt",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.4",
+      "status": "PASS",
+      "detail": "--read-only-port = 0",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.5",
+      "status": "PASS",
+      "detail": "--streaming-connection-idle-timeout = 4h",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.6",
+      "status": "PASS",
+      "detail": "--make-iptables-util-chains = true (mặc định)",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.7",
+      "status": "PASS",
+      "detail": "--event-qps = 0",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.8",
+      "status": "PASS",
+      "detail": "--rotate-certificates = true",
+      "timestamp": "2026-04-10T08:03:03Z"
+    },
+    {
+      "control": "3.2.9",
+      "status": "PASS",
+      "detail": "RotateKubeletServerCertificate = true (feature-gates)",
+      "timestamp": "2026-04-10T08:03:03Z"
+    }
+  ]
+}
