@@ -1,0 +1,19 @@
+{
+  "section": "4.1",
+  "title": "RBAC and Service Accounts",
+  "timestamp": "2026-04-13T13:55:32Z",
+  "results": [
+    {
+      "control": "4.1.1",
+      "status": "FAIL",
+      "detail": "Phát hiện 1 binding không thuộc hệ thống có quyền God-mode: aks-cluster-admin-binding",
+      "timestamp": "2026-04-13T13:55:32Z"
+    },
+    {
+      "control": "4.1.3",
+      "status": "FAIL",
+      "detail": "Phát hiện 2 Roles sử dụng wildcard (*), vi phạm nguyên tắc đặc quyền tối thiểu.",
+      "timestamp": "2026-04-13T13:55:32Z"
+    }
+  ]
+}
