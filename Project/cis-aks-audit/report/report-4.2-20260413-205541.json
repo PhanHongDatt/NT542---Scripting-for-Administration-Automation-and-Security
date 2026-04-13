@@ -1,0 +1,37 @@
+{
+  "section": "4.2",
+  "title": "Pod Security",
+  "timestamp": "2026-04-13T13:55:41Z",
+  "results": [
+    {
+      "control": "4.2.1",
+      "status": "FAIL",
+      "detail": "Phát hiện Pod chạy privileged: calico-system/calico-node-zk8fx",
+      "timestamp": "2026-04-13T13:55:41Z"
+    },
+    {
+      "control": "4.2.2",
+      "status": "FAIL",
+      "detail": "1 Pod vi phạm hostPID: default/node-debugger-aks-system-30060660-vmss000003-mkb4p",
+      "timestamp": "2026-04-13T13:55:41Z"
+    },
+    {
+      "control": "4.2.3",
+      "status": "FAIL",
+      "detail": "1 Pod vi phạm hostIPC: default/node-debugger-aks-system-30060660-vmss000003-mkb4p",
+      "timestamp": "2026-04-13T13:55:41Z"
+    },
+    {
+      "control": "4.2.4",
+      "status": "FAIL",
+      "detail": "4 Pod vi phạm hostNetwork: calico-system/calico-node-zk8fx calico-system/calico-typha-86f4575864-m7npg default/node-debugger-aks-system-30060660-vmss000003-mkb4p tigera-operator/tigera-operator-ddc6cdfc6-n6ls4",
+      "timestamp": "2026-04-13T13:55:41Z"
+    },
+    {
+      "control": "4.2.5",
+      "status": "FAIL",
+      "detail": "Phát hiện Pod cho phép leo thang đặc quyền: calico-system/calico-node-zk8fx",
+      "timestamp": "2026-04-13T13:55:41Z"
+    }
+  ]
+}
