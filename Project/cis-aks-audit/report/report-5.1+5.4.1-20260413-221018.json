@@ -1,0 +1,19 @@
+{
+  "section": "5.1+5.4.1",
+  "title": "Azure-level Security Controls",
+  "timestamp": "2026-04-13T15:10:18Z",
+  "results": [
+    {
+      "control": "5.1.1",
+      "status": "PASS",
+      "detail": "Defender pricingTier = Standard",
+      "timestamp": "2026-04-13T15:10:18Z"
+    },
+    {
+      "control": "5.4.1",
+      "status": "PASS",
+      "detail": "authorizedIpRanges co 1 entry: 113.183.234.90/32",
+      "timestamp": "2026-04-13T15:10:18Z"
+    }
+  ]
+}
