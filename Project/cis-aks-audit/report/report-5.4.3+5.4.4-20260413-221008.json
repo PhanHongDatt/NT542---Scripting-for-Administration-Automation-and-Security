@@ -1,0 +1,19 @@
+{
+  "section": "5.4.3+5.4.4",
+  "title": "Azure-level Network Security",
+  "timestamp": "2026-04-13T15:10:08Z",
+  "results": [
+    {
+      "control": "5.4.3",
+      "status": "PASS",
+      "detail": "Tat ca nodes khong co public IP",
+      "timestamp": "2026-04-13T15:10:08Z"
+    },
+    {
+      "control": "5.4.4",
+      "status": "PASS",
+      "detail": "networkPolicy = calico (1 policy objects)",
+      "timestamp": "2026-04-13T15:10:08Z"
+    }
+  ]
+}
