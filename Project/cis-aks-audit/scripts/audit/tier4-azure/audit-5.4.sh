@@ -13,52 +13,6 @@ source "$SCRIPT_DIR/../../helpers/common.sh"
 
 report_init "5.4.3+5.4.4" "Azure-level Network Security"
 
-# ─────────────────────────────────────────
-#  Biến cluster
-# ─────────────────────────────────────────
-CLUSTER_NAME=""
-RESOURCE_GROUP=""
-AKS_JSON=""
-
-# ─────────────────────────────────────────
-#  HÀM: Lấy thông tin cluster
-# ─────────────────────────────────────────
-get_cluster_info() {
-    log_info "Lấy thông tin cluster từ Azure..."
-
-    local cluster_list
-    cluster_list=$(az aks list --output json 2>/dev/null)
-
-    if [ -z "$cluster_list" ] || [ "$cluster_list" = "[]" ]; then
-        log_warn "Không tìm thấy AKS cluster nào!"
-        return 1
-    fi
-
-    CLUSTER_NAME=$(echo "$cluster_list" | jq -r '.[0].name')
-    RESOURCE_GROUP=$(echo "$cluster_list" | jq -r '.[0].resourceGroup')
-
-    if [ -z "$CLUSTER_NAME" ] || [ "$CLUSTER_NAME" = "null" ]; then
-        log_warn "Không xác định được tên cluster!"
-        return 1
-    fi
-
-    log_info "Cluster       : $CLUSTER_NAME"
-    log_info "Resource Group: $RESOURCE_GROUP"
-    return 0
-}
-
-# ─────────────────────────────────────────
-#  HÀM: Lấy AKS JSON 1 lần, dùng cho nhiều checks
-# ─────────────────────────────────────────
-load_aks_json() {
-    if [ -z "$AKS_JSON" ]; then
-        log_info "Đang lấy cấu hình cluster từ Azure API..."
-        AKS_JSON=$(az aks show \
-            --name "$CLUSTER_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-            --output json 2>/dev/null)
-    fi
-}
 
 # ─────────────────────────────────────────
 #  5.4.3 - Ensure clusters are created with Private Nodes

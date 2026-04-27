@@ -46,11 +46,16 @@ node_setup() {
     # Tạo debug pod chạy nền (sleep 3600)
     kubectl debug "node/$node_name" --image=ubuntu:22.04 --quiet -- sh -c "sleep 3600" &>/dev/null &
     
-    # Chờ pod khởi động
-    sleep 8
+    # Chờ pod xuất hiện (poll tối đa 60s thay vì sleep cố định)
+    local deadline=$((SECONDS + 60))
+    while [ $SECONDS -lt $deadline ]; do
+        DEBUG_POD_NAME=$(kubectl get pods -n default --field-selector spec.nodeName="$node_name" --no-headers -o custom-columns=':metadata.name' 2>/dev/null | grep 'node-debugger' | head -1)
+        [ -n "$DEBUG_POD_NAME" ] && break
+        sleep 2
+    done
 
-    # Lấy tên pod vừa tạo
-    DEBUG_POD_NAME=$(kubectl get pods -n default --field-selector spec.nodeName="$node_name" --no-headers -o custom-columns=':metadata.name' | grep 'node-debugger' | head -1)
+    # Chờ pod Ready trước khi exec
+    [ -n "$DEBUG_POD_NAME" ] && kubectl wait pod "$DEBUG_POD_NAME" -n default --for=condition=Ready --timeout=30s &>/dev/null
 
     if [ -z "$DEBUG_POD_NAME" ]; then
         log_warn "Không tạo được debug pod, thử dùng pod kube-system..."
@@ -87,12 +92,6 @@ node_cleanup() {
     fi
 }
 
-# Hàm gộp nhanh để chạy 1 lệnh duy nhất (nếu không cần duy trì state)
-run_on_node() {
-    local node_name=$(get_nodes | head -1)
-    local cmd=$1
-    kubectl debug "node/$node_name" -q -i --image=mcr.microsoft.com/cbl-mariner/busybox:2.0 -- sh -c "chroot /host /bin/bash -c \"$cmd\"" 2>/dev/null
-}
 
 # ─────────────────────────────────────────
 #  KẾT QUẢ AUDIT (Dùng file tạm để lưu state)
@@ -102,7 +101,7 @@ REPORT_SECTION=""
 REPORT_TITLE=""
 
 # Dọn dẹp file tạm khi script kết thúc
-trap "rm -f $REPORT_TEMP_FILE" EXIT
+trap 'rm -f "$REPORT_TEMP_FILE"' EXIT
 
 report_init() {
     REPORT_SECTION=$1
@@ -158,13 +157,12 @@ report_save_json() {
     local filename="$out_dir/report-${REPORT_SECTION}-$(date +%Y%m%d-%H%M%S).json"
     
     # Sử dụng jq để build JSON an toàn (tránh lỗi escape characters)
-    local json_items="[]"
-    while IFS=$'\t' read -r id status detail is_remed; do
+    local json_items
+    json_items=$(while IFS=$'\t' read -r id status detail is_remed; do
         if [ "$is_remed" == "true" ]; then status="REMEDIATED"; fi
-        local item=$(jq -n --arg c "$id" --arg s "$status" --arg d "$detail" --arg t "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-            '{control: $c, status: $s, detail: $d, timestamp: $t}')
-        json_items=$(echo "$json_items" | jq ". += [$item]")
-    done < "$REPORT_TEMP_FILE"
+        jq -n --arg c "$id" --arg s "$status" --arg d "$detail" --arg t "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+            '{control: $c, status: $s, detail: $d, timestamp: $t}'
+    done < "$REPORT_TEMP_FILE" | jq -s '.')
     
     jq -n \
         --arg sec "$REPORT_SECTION" \
@@ -195,11 +193,13 @@ report_save_html() {
             REMEDIATED) color="#fd7e14"; ((remediated++)) ;;
         esac
         
+        local safe_detail
+        safe_detail=$(printf '%s' "$detail" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
         rows+="
             <tr>
                 <td><strong>${id}</strong></td>
                 <td><span class=\"badge\" style=\"background:${color}\">${status}</span></td>
-                <td>${detail}</td>
+                <td>${safe_detail}</td>
             </tr>"
     done < "$REPORT_TEMP_FILE"
     
@@ -247,6 +247,54 @@ report_save_html() {
 EOF
 
     log_info "🌐 HTML report: ${C_CYAN}$filename${C_RESET}"
+}
+
+# ─────────────────────────────────────────
+#  AZURE AKS - Thông tin cluster
+# ─────────────────────────────────────────
+CLUSTER_NAME=""
+RESOURCE_GROUP=""
+AKS_JSON=""
+
+get_cluster_info() {
+    log_info "Lấy thông tin cluster từ Azure..."
+
+    local cluster_list
+    cluster_list=$(az aks list --output json 2>/dev/null)
+
+    if [ -z "$cluster_list" ] || [ "$cluster_list" = "[]" ]; then
+        log_warn "Không tìm thấy AKS cluster nào! Kiểm tra: az account show"
+        return 1
+    fi
+
+    CLUSTER_NAME=$(echo "$cluster_list" | jq -r '.[0].name')
+    RESOURCE_GROUP=$(echo "$cluster_list" | jq -r '.[0].resourceGroup')
+
+    if [ -z "$CLUSTER_NAME" ] || [ "$CLUSTER_NAME" = "null" ]; then
+        log_warn "Không xác định được tên cluster!"
+        return 1
+    fi
+
+    log_info "Cluster       : $CLUSTER_NAME"
+    log_info "Resource Group: $RESOURCE_GROUP"
+    return 0
+}
+
+# Lấy toàn bộ thông tin AKS 1 lần, tránh gọi az aks show lặp lại (~2-3 giây/lần)
+load_aks_json() {
+    if [ -z "$AKS_JSON" ]; then
+        log_info "Đang lấy cấu hình cluster từ Azure API..."
+        local _result
+        _result=$(az aks show \
+            --name "$CLUSTER_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --output json 2>/dev/null)
+        if [ -z "$_result" ] || [ "$_result" = "null" ]; then
+            log_warn "az aks show trả về rỗng — kiểm tra quyền và subscription."
+            return 1
+        fi
+        AKS_JSON="$_result"
+    fi
 }
 
 # ─────────────────────────────────────────

@@ -13,56 +13,6 @@ source "$SCRIPT_DIR/../../helpers/common.sh"
 
 report_init "5.1+5.4.1" "Azure-level Security Controls"
 
-# ─────────────────────────────────────────
-#  Biến cluster (lấy tự động từ Azure CLI)
-# ─────────────────────────────────────────
-CLUSTER_NAME=""
-RESOURCE_GROUP=""
-AKS_JSON=""
-
-# ─────────────────────────────────────────
-#  HÀM: Lấy tên cluster + resource group
-#  từ subscription hiện tại đang đăng nhập
-# ─────────────────────────────────────────
-get_cluster_info() {
-    log_info "Lấy thông tin cluster từ Azure..."
-
-    # az aks list trả về JSON danh sách tất cả cluster trong subscription
-    local cluster_list
-    cluster_list=$(az aks list --output json 2>/dev/null)
-
-    if [ -z "$cluster_list" ] || [ "$cluster_list" = "[]" ]; then
-        log_warn "Không tìm thấy AKS cluster nào! Kiểm tra: az account show"
-        return 1
-    fi
-
-    # Lấy cluster đầu tiên trong danh sách
-    CLUSTER_NAME=$(echo "$cluster_list" | jq -r '.[0].name')
-    RESOURCE_GROUP=$(echo "$cluster_list" | jq -r '.[0].resourceGroup')
-
-    if [ -z "$CLUSTER_NAME" ] || [ "$CLUSTER_NAME" = "null" ]; then
-        log_warn "Không xác định được tên cluster!"
-        return 1
-    fi
-
-    log_info "Cluster       : $CLUSTER_NAME"
-    log_info "Resource Group: $RESOURCE_GROUP"
-    return 0
-}
-
-# ─────────────────────────────────────────
-#  HÀM: Lấy toàn bộ thông tin AKS 1 lần
-#  Tránh gọi az aks show nhiều lần (mỗi lần ~2-3 giây)
-# ─────────────────────────────────────────
-load_aks_json() {
-    if [ -z "$AKS_JSON" ]; then
-        log_info "Đang lấy cấu hình cluster từ Azure API..."
-        AKS_JSON=$(az aks show \
-            --name "$CLUSTER_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-            --output json 2>/dev/null)
-    fi
-}
 
 # ─────────────────────────────────────────
 #  5.1.1 - Microsoft Defender for Containers
@@ -152,7 +102,7 @@ check_5_4_1() {
 
         if ask_remediate "Giới hạn API Server chỉ cho IP hiện tại của bạn? [Y/n]: "; then
             local my_ip
-            my_ip=$(curl -s https://api.ipify.org 2>/dev/null)
+            my_ip=$(curl -s --max-time 10 https://api.ipify.org 2>/dev/null)
 
             if [ -z "$my_ip" ]; then
                 log_warn "Không lấy được IP. Sửa thủ công bằng lệnh:"
