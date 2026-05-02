@@ -1,0 +1,8 @@
+aws_region            = "us-east-1"
+project_name          = "demo-vpc-app"
+allowed_ingress_cidrs = ["0.0.0.0/0"]
+
+tags = {
+  Environment = "dev"
+  Owner       = "Tofu"
+}

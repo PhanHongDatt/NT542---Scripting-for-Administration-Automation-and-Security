@@ -17,19 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def load_inventory(filepath: str = "inventory.yml") -> dict:
-    """
-    Đọc file inventory YAML và trả về dict chứa toàn bộ thông tin.
-
-    Tham số:
-        filepath: Đường dẫn tới file inventory (mặc định: inventory.yml)
-
-    Trả về:
-        dict chứa 'credentials' và 'devices'
-
-    Ngoại lệ:
-        FileNotFoundError: Nếu file không tồn tại
-        yaml.YAMLError: Nếu YAML không hợp lệ
-    """
     if not os.path.exists(filepath):
         logger.error(f"Không tìm thấy file inventory: {filepath}")
         raise FileNotFoundError(f"File inventory không tồn tại: {filepath}")
@@ -45,16 +32,6 @@ def load_inventory(filepath: str = "inventory.yml") -> dict:
 
 
 def get_credentials(inventory: dict) -> dict:
-    """
-    Lấy credentials từ inventory, ưu tiên biến môi trường.
-
-    BẢO MẬT: Password KHÔNG được hardcode trong file.
-    Nếu trường 'password_env' tồn tại, hàm sẽ đọc giá trị
-    từ biến môi trường tương ứng.
-
-    Trả về:
-        dict với keys: username, password, ssh_port
-    """
     creds = inventory.get("credentials", {}).get("default", {})
     username = creds.get("username", "admin")
     ssh_port = creds.get("ssh_port", 22)
@@ -77,21 +54,10 @@ def get_credentials(inventory: dict) -> dict:
 
 
 def get_devices(inventory: dict) -> dict:
-    """Trả về dict tất cả thiết bị."""
     return inventory.get("devices", {})
 
 
 def get_devices_by_role(inventory: dict, role: str) -> dict:
-    """
-    Lọc thiết bị theo vai trò (role).
-
-    Tham số:
-        role: 'superspine', 'spine', 'leaf', hoặc 'client'
-
-    Ví dụ:
-        spines = get_devices_by_role(inv, 'spine')
-        # Trả về dict chỉ chứa các spine switch
-    """
     devices = get_devices(inventory)
     return {
         name: info
@@ -101,7 +67,6 @@ def get_devices_by_role(inventory: dict, role: str) -> dict:
 
 
 def get_devices_by_pod(inventory: dict, pod: int) -> dict:
-    """Lọc thiết bị theo POD (1, 2, hoặc 3)."""
     devices = get_devices(inventory)
     return {
         name: info
@@ -111,10 +76,6 @@ def get_devices_by_pod(inventory: dict, pod: int) -> dict:
 
 
 def get_frr_devices(inventory: dict) -> dict:
-    """
-    Trả về các thiết bị chạy FRRouting (loại 'linux'),
-    tức là superspine + spine + leaf (KHÔNG bao gồm client).
-    """
     devices = get_devices(inventory)
     return {
         name: info
@@ -124,7 +85,6 @@ def get_frr_devices(inventory: dict) -> dict:
 
 
 def print_inventory_summary(inventory: dict) -> None:
-    """In tóm tắt inventory ra console."""
     devices = get_devices(inventory)
     roles = {}
     for name, info in devices.items():

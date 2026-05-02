@@ -269,11 +269,11 @@ def deploy_all(inventory: dict, lab_name: str = "clos02-light") -> dict:
 
 
 # ===== CHẠY ĐỘC LẬP ĐỂ XEM CẤU HÌNH MẪU =====
-if __name__ == "__main__":
-    from inventory_loader import load_inventory
+if __name__ == "__main__":ort load_inventory
 
     logging.basicConfig(level=logging.INFO)
     inv = load_inventory()
+    from inventory_loader imp
 
     # In cấu hình mẫu cho spine1
     print("\n===== CẤU HÌNH MẪU: spine1 =====")

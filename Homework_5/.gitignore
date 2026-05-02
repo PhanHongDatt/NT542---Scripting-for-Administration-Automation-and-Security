@@ -1,0 +1,9 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+terraform.zip
+.terraform-bin/
+*.pem
+*.key
+.DS_Store
