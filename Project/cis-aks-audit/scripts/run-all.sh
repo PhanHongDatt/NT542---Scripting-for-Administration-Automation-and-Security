@@ -43,6 +43,7 @@ AUDIT_SCRIPTS=(
     "audit/tier3-k8s/audit-4.1.sh"
     "audit/tier3-pod-security/audit-4.2.sh"
     "audit/tier3-k8s/audit-4.4.sh"
+    "audit/tier3-k8s/audit-4.5+4.6.sh"
     "audit/tier4-azure/audit-5.1.sh"
     "audit/tier4-azure/audit-5.4.sh"
 )
