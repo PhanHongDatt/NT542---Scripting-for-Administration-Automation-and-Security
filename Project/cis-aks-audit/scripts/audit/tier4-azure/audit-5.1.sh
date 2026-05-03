@@ -5,6 +5,8 @@
 #
 #  Controls:
 #    5.1.1 - Microsoft Defender for Containers phải bật
+#    5.1.2 - Diagnostic Setting phải bật để capture logs
+#    5.1.3 - Azure Policy Add-on phải được cài đặt
 #    5.4.1 - API Server phải giới hạn IP (authorizedIpRanges)
 # ============================================================
 
@@ -64,6 +66,85 @@ check_5_1_1() {
     else
         log_warn "5.1.1: pricingTier = $pricing_tier (không xác định)"
         report_add "5.1.1" "WARN" "pricingTier = $pricing_tier"
+    fi
+}
+
+# ─────────────────────────────────────────
+#  5.1.2 - Ensure Diagnostic Setting is enabled to capture all logs
+#
+#  Diagnostic Settings cho phép đẩy logs của Control Plane (API Server,
+#  Audit Logs, v.v.) vào Log Analytics để giám sát.
+#
+#  Kiểm tra: az monitor diagnostic-settings list
+#  Mong đợi: Ít nhất 1 setting đang bật và đẩy log vào workspace.
+# ─────────────────────────────────────────
+check_5_1_2() {
+    log_section "5.1.2 - Ensure Diagnostic Setting is enabled to capture all logs"
+    log_info "Lý do: Thiếu Diagnostic Settings = mất dấu vết các hành động trên Control Plane"
+
+    # Lấy resource ID của cluster
+    local cluster_id
+    cluster_id=$(echo "$AKS_JSON" | jq -r '.id')
+
+    local diag_json
+    diag_json=$(az monitor diagnostic-settings list --resource "$cluster_id" --output json 2>/dev/null)
+
+    if [ -z "$diag_json" ] || [ "$diag_json" = "[]" ]; then
+        log_fail "5.1.2: Chưa có Diagnostic Setting nào được cấu hình ✗"
+        report_add "5.1.2" "FAIL" "Chua co Diagnostic Setting nao duoc cau hinh"
+    else
+        local workspace_id
+        workspace_id=$(echo "$diag_json" | jq -r '.[0].workspaceId // ""')
+
+        if [ -n "$workspace_id" ] && [ "$workspace_id" != "null" ]; then
+            log_pass "5.1.2: Đã tìm thấy Diagnostic Setting trỏ về workspace: $workspace_id ✓"
+            report_add "5.1.2" "PASS" "Diagnostic Setting dang bat"
+        else
+            log_fail "5.1.2: Diagnostic Setting tồn tại nhưng chưa trỏ về Log Analytics Workspace ✗"
+            report_add "5.1.2" "FAIL" "Diagnostic Setting chua tro ve Workspace"
+        fi
+    fi
+}
+
+# ─────────────────────────────────────────
+#  5.1.3 - Ensure Azure Policy Add-on for Kubernetes is installed
+#
+#  Azure Policy Add-on cho phép quản lý và thực thi các chính sách
+#  bảo mật (như chặn pod chạy root) tập trung từ Azure Policy.
+#
+#  Kiểm tra: addonProfiles.azurepolicy.enabled
+#  Mong đợi: true
+# ─────────────────────────────────────────
+check_5_1_3() {
+    log_section "5.1.3 - Ensure Azure Policy Add-on for Kubernetes is installed"
+    log_info "Lý do: Azure Policy giúp thực thi các tiêu chuẩn bảo mật (PSP/PSA) tập trung"
+
+    load_aks_json
+
+    local policy_enabled
+    policy_enabled=$(echo "$AKS_JSON" | jq -r '.addonProfiles.azurepolicy.enabled // "false"')
+
+    log_info "Azure Policy Add-on enabled = $policy_enabled"
+
+    if [ "$policy_enabled" == "true" ]; then
+        log_pass "5.1.3: Azure Policy Add-on đang bật ✓"
+        report_add "5.1.3" "PASS" "Azure Policy Add-on dang bat"
+    else
+        log_fail "5.1.3: Azure Policy Add-on chưa được cài đặt ✗"
+        
+        if ask_remediate "Bật Azure Policy Add-on cho cluster? [Y/n]: "; then
+            log_info "Đang bật Azure Policy Add-on (có thể mất vài phút)..."
+            az aks enable-addons \
+                --addons azure-policy \
+                --name "$CLUSTER_NAME" \
+                --resource-group "$RESOURCE_GROUP" \
+                --output none 2>/dev/null
+            
+            log_pass "Đã yêu cầu bật Azure Policy Add-on ✓"
+            report_add "5.1.3" "FAIL" "Azure Policy Add-on: Disabled -> Enabled (da sua)" "true"
+        else
+            report_add "5.1.3" "FAIL" "Azure Policy Add-on chua bat"
+        fi
     fi
 }
 
@@ -167,6 +248,8 @@ main() {
 
     echo ""
     check_5_1_1
+    check_5_1_2
+    check_5_1_3
     check_5_4_1
 
     report_print_summary

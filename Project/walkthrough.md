@@ -34,6 +34,7 @@ graph TD
 | Thư mục / File | Mô tả |
 |---|---|
 | `terraform/` | Mã IaC để dựng toàn bộ hạ tầng Azure (VNet, Log Analytics, AKS) |
+| `scripts/run-all.sh` | **Script tổng lực**: Tự động chạy toàn bộ các tier audit và gom báo cáo |
 | `scripts/audit/tier1-node/` | Scripts audit cấp Node (quyền file, ownership) |
 | `scripts/audit/tier2-kubelet/` | Scripts audit cấp Kubelet (cấu hình bảo mật kubelet) |
 | `scripts/helpers/common.sh` | Thư viện hàm dùng chung: logging, debug pod, report engine |
@@ -43,6 +44,15 @@ graph TD
 ---
 
 ## Chi Tiết Từng Thành Phần
+
+### 0. 🚀 Master Orchestrator — `run-all.sh`
+
+Đây là điểm cải tiến quan trọng nhất về mặt vận hành. Thay vì phải chạy từng script lẻ tẻ, script này sẽ:
+1. **Kiểm tra môi trường**: Đảm bảo máy có `az`, `kubectl`, `jq` và đã đăng nhập.
+2. **Thực thi tuần tự**: Chạy từ Tier 1 đến Tier 4 theo đúng thứ tự logic.
+3. **Tập trung báo cáo**: Đảm bảo mọi kết quả JSON/HTML đều đổ về thư mục `report/`.
+
+---
 
 ### 1. 🏗️ Terraform — Hạ tầng Azure
 
