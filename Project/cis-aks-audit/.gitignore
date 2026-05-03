@@ -24,3 +24,4 @@ override.tf.json
 
 # Bỏ qua các file plan (được mã hoá)
 *tfplan*
+Claude.md
