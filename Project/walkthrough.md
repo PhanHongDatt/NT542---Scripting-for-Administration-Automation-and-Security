@@ -109,6 +109,14 @@ graph TD
 | 3.2.8 | `--rotate-certificates` | `≠ false` |
 | 3.2.9 | `RotateKubeletServerCertificate` | `= true` |
 
+#### [audit-4.5+4.6.sh](file:///d:/study/UIT/%5BNT542%5D%20-%20L%E1%BA%ADp%20tr%C3%ACnh%20k%E1%BB%8Bch%20b%E1%BA%A3n/B%C3%A0i%20t%E1%BA%ADp%20nh%C3%B3m/Homework/Project/cis-aks-audit/scripts/audit/tier3-k8s/audit-4.5+4.6.sh) — Section 4.5 & 4.6: Secrets & Namespaces
+
+| Control | Kiểm tra | Kỳ vọng |
+|---|---|---|
+| 4.5.1 | Secret injection method | Dùng volume mount (không dùng env vars) |
+| 4.6.3 | Workload location | Không chạy pods trong namespace `default` |
+
+
 ---
 
 ### 3. 📦 K8s Manifests — Workloads Test
