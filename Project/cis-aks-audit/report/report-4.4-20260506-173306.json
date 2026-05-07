@@ -1,0 +1,19 @@
+{
+  "section": "4.4",
+  "title": "Network Policies and CNI",
+  "timestamp": "2026-05-06T10:33:06Z",
+  "results": [
+    {
+      "control": "4.4.1",
+      "status": "PASS",
+      "detail": "networkPlugin=azure, networkPolicy=calico",
+      "timestamp": "2026-05-06T10:33:06Z"
+    },
+    {
+      "control": "4.4.2",
+      "status": "FAIL",
+      "detail": "2 namespace thieu NetworkPolicy: default staging",
+      "timestamp": "2026-05-06T10:33:06Z"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =====================================================================
 # common.sh - Các hàm dùng chung cho tất cả CIS AKS Benchmark audit scripts
 # CIS AKS Benchmark v1.8.0 - Đồ án NT542
@@ -37,32 +37,45 @@ get_nodes() {
 #  DEBUG POD - Truy cập filesystem của node
 # ─────────────────────────────────────────
 DEBUG_POD_NAME=""
-DEBUG_POD_NS="default"
+DEBUG_POD_NS="kube-system"
 
 node_setup() {
     local node_name=$1
+    DEBUG_POD_NS="kube-system"
     log_info "Tạo debug pod trên node: $node_name ..."
 
+    # Dọn debug pod cũ để tránh chọn nhầm pod Error/Completed từ lần chạy trước.
+    local old_debug_pods
+    old_debug_pods=$(kubectl get pods -n "$DEBUG_POD_NS" \
+        --field-selector spec.nodeName="$node_name" \
+        --no-headers -o custom-columns=':metadata.name' 2>/dev/null | grep 'node-debugger' || true)
+    if [ -n "$old_debug_pods" ]; then
+        while IFS= read -r old_pod; do
+            [ -n "$old_pod" ] && kubectl delete pod "$old_pod" -n "$DEBUG_POD_NS" --ignore-not-found=true &>/dev/null
+        done <<< "$old_debug_pods"
+    fi
+
     # Tạo debug pod chạy nền (sleep 3600)
-    kubectl debug "node/$node_name" --image=ubuntu:22.04 --quiet -- sh -c "sleep 3600" &>/dev/null &
+    kubectl debug "node/$node_name" -n "$DEBUG_POD_NS" --profile=sysadmin --image=ubuntu:22.04 --quiet -- sh -c "sleep 3600" &>/dev/null &
     
     # Chờ pod xuất hiện (poll tối đa 60s thay vì sleep cố định)
     local deadline=$((SECONDS + 60))
     while [ $SECONDS -lt $deadline ]; do
-        DEBUG_POD_NAME=$(kubectl get pods -n default --field-selector spec.nodeName="$node_name" --no-headers -o custom-columns=':metadata.name' 2>/dev/null | grep 'node-debugger' | head -1)
+        DEBUG_POD_NAME=$(kubectl get pods -n "$DEBUG_POD_NS" \
+            --field-selector spec.nodeName="$node_name",status.phase=Running \
+            --no-headers -o custom-columns=':metadata.name' 2>/dev/null | grep 'node-debugger' | head -1)
         [ -n "$DEBUG_POD_NAME" ] && break
         sleep 2
     done
 
     # Chờ pod Ready trước khi exec
-    [ -n "$DEBUG_POD_NAME" ] && kubectl wait pod "$DEBUG_POD_NAME" -n default --for=condition=Ready --timeout=30s &>/dev/null
+    [ -n "$DEBUG_POD_NAME" ] && kubectl wait pod "$DEBUG_POD_NAME" -n "$DEBUG_POD_NS" --for=condition=Ready --timeout=30s &>/dev/null
 
     if [ -z "$DEBUG_POD_NAME" ]; then
         log_warn "Không tạo được debug pod, thử dùng pod kube-system..."
         DEBUG_POD_NAME=$(kubectl get pods -n kube-system --field-selector spec.nodeName="$node_name" --no-headers -o custom-columns=':metadata.name' | grep -E 'azure-cns|kube-proxy' | head -1)
-        DEBUG_POD_NS="kube-system"
     else
-        DEBUG_POD_NS="default"
+        DEBUG_POD_NS="kube-system"
     fi
 
     if [ -n "$DEBUG_POD_NAME" ]; then
@@ -81,11 +94,12 @@ node_exec() {
         return 1
     fi
     # Thực thi lệnh qua chroot /host
-    kubectl exec "$DEBUG_POD_NAME" -n "$DEBUG_POD_NS" -- chroot /host /bin/bash -c "$cmd" 2>/dev/null
+    # MSYS_NO_PATHCONV giữ nguyên /host khi chạy kubectl.exe từ Git Bash trên Windows.
+    MSYS_NO_PATHCONV=1 kubectl exec "$DEBUG_POD_NAME" -n "$DEBUG_POD_NS" -- chroot /host /bin/bash -c "$cmd" 2>/dev/null
 }
 
 node_cleanup() {
-    if [ -n "$DEBUG_POD_NAME" ] && [ "$DEBUG_POD_NS" == "default" ]; then
+    if [ -n "$DEBUG_POD_NAME" ] && [[ "$DEBUG_POD_NAME" == node-debugger-* ]]; then
         kubectl delete pod "$DEBUG_POD_NAME" -n "$DEBUG_POD_NS" --ignore-not-found=true &>/dev/null
         log_info "Đã dọn dẹp debug pod."
         DEBUG_POD_NAME=""
@@ -154,7 +168,12 @@ report_print_summary() {
 report_save_json() {
     local out_dir=${1:-.}
     mkdir -p "$out_dir"
-    local filename="$out_dir/report-${REPORT_SECTION}-$(date +%Y%m%d-%H%M%S).json"
+    
+    local version_suffix=""
+    if [ -n "$AUDIT_RUN_VERSION" ]; then
+        version_suffix="-$AUDIT_RUN_VERSION"
+    fi
+    local filename="$out_dir/report-${REPORT_SECTION}-$(date +%Y%m%d-%H%M%S)${version_suffix}.json"
     
     # Sử dụng jq để build JSON an toàn (tránh lỗi escape characters)
     local json_items
@@ -178,7 +197,12 @@ report_save_html() {
     local out_dir=${1:-.}
     mkdir -p "$out_dir"
     local ts=$(date +%Y%m%d-%H%M%S)
-    local filename="$out_dir/report-${REPORT_SECTION}-${ts}.html"
+    
+    local version_suffix=""
+    if [ -n "$AUDIT_RUN_VERSION" ]; then
+        version_suffix="-$AUDIT_RUN_VERSION"
+    fi
+    local filename="$out_dir/report-${REPORT_SECTION}-${ts}${version_suffix}.html"
     
     local pass=0 fail=0 warn=0 remediated=0
     local rows=""

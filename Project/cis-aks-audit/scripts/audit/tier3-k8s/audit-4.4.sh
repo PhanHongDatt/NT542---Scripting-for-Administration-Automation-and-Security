@@ -67,7 +67,8 @@ check_4_4_1() {
 #  Mong đợi: mỗi namespace user-defined có ít nhất 1 NetworkPolicy
 #
 #  Bỏ qua: kube-system, kube-public, kube-node-lease,
-#           calico-system, calico-apiserver, gatekeeper-system
+#           calico-system, calico-apiserver, tigera-operator,
+#           gatekeeper-system
 # ─────────────────────────────────────────
 check_4_4_2() {
     log_section "4.4.2 - Ensure all Namespaces have Network Policies defined"
@@ -76,7 +77,7 @@ check_4_4_2() {
     # Lấy danh sách namespace, bỏ qua system namespaces
     local all_ns
     all_ns=$(kubectl get ns --no-headers -o custom-columns=':metadata.name' 2>/dev/null \
-        | grep -vE '^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|gatekeeper-system|azure-arc)$')
+        | grep -vE '^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$')
 
     if [ -z "$all_ns" ]; then
         log_warn "4.4.2: Không lấy được danh sách namespaces"

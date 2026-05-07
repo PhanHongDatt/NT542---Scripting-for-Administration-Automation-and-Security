@@ -48,21 +48,7 @@ check_5_1_1() {
         report_add "5.1.1" "PASS" "Defender pricingTier = Standard"
     elif [ "$pricing_tier" = "Free" ]; then
         log_fail "5.1.1: Defender for Containers = Free (đang tắt) ✗"
-
-        if ask_remediate "Bật Microsoft Defender for Containers? [Y/n]: "; then
-            az security pricing create \
-                --name "Containers" \
-                --tier "Standard" \
-                --output none 2>/dev/null
-
-            local new_tier
-            new_tier=$(az security pricing show \
-                --name "Containers" --query pricingTier -o tsv 2>/dev/null)
-            log_info "Đã bật Defender: Free → $new_tier"
-            report_add "5.1.1" "FAIL" "Defender: Free → $new_tier (da bat)" "true"
-        else
-            report_add "5.1.1" "FAIL" "Defender pricingTier = Free (tat)"
-        fi
+        report_add "5.1.1" "FAIL" "Defender pricingTier = Free (tat)"
     else
         log_warn "5.1.1: pricingTier = $pricing_tier (không xác định)"
         report_add "5.1.1" "WARN" "pricingTier = $pricing_tier"
@@ -82,12 +68,19 @@ check_5_1_2() {
     log_section "5.1.2 - Ensure Diagnostic Setting is enabled to capture all logs"
     log_info "Lý do: Thiếu Diagnostic Settings = mất dấu vết các hành động trên Control Plane"
 
+    load_aks_json
+    if [ -z "$AKS_JSON" ]; then
+        log_warn "5.1.2: Không lấy được thông tin cluster"
+        report_add "5.1.2" "WARN" "Khong lay duoc thong tin cluster"
+        return
+    fi
+
     # Lấy resource ID của cluster
     local cluster_id
     cluster_id=$(echo "$AKS_JSON" | jq -r '.id')
 
     local diag_json
-    diag_json=$(az monitor diagnostic-settings list --resource "$cluster_id" --output json 2>/dev/null)
+    diag_json=$(MSYS_NO_PATHCONV=1 az monitor diagnostic-settings list --resource "$cluster_id" --output json 2>/dev/null)
 
     if [ -z "$diag_json" ] || [ "$diag_json" = "[]" ]; then
         log_fail "5.1.2: Chưa có Diagnostic Setting nào được cấu hình ✗"
@@ -131,20 +124,7 @@ check_5_1_3() {
         report_add "5.1.3" "PASS" "Azure Policy Add-on dang bat"
     else
         log_fail "5.1.3: Azure Policy Add-on chưa được cài đặt ✗"
-        
-        if ask_remediate "Bật Azure Policy Add-on cho cluster? [Y/n]: "; then
-            log_info "Đang bật Azure Policy Add-on (có thể mất vài phút)..."
-            az aks enable-addons \
-                --addons azure-policy \
-                --name "$CLUSTER_NAME" \
-                --resource-group "$RESOURCE_GROUP" \
-                --output none 2>/dev/null
-            
-            log_pass "Đã yêu cầu bật Azure Policy Add-on ✓"
-            report_add "5.1.3" "FAIL" "Azure Policy Add-on: Disabled -> Enabled (da sua)" "true"
-        else
-            report_add "5.1.3" "FAIL" "Azure Policy Add-on chua bat"
-        fi
+        report_add "5.1.3" "FAIL" "Azure Policy Add-on chua bat"
     fi
 }
 
@@ -180,29 +160,7 @@ check_5_4_1() {
 
     if [ "$ip_count" -eq 0 ] 2>/dev/null; then
         log_fail "5.4.1: authorizedIpRanges = [] → API Server mở public ✗"
-
-        if ask_remediate "Giới hạn API Server chỉ cho IP hiện tại của bạn? [Y/n]: "; then
-            local my_ip
-            my_ip=$(curl -s --max-time 10 https://api.ipify.org 2>/dev/null)
-
-            if [ -z "$my_ip" ]; then
-                log_warn "Không lấy được IP. Sửa thủ công bằng lệnh:"
-                log_warn "az aks update --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --api-server-authorized-ip-ranges <YOUR_IP>/32"
-                report_add "5.4.1" "FAIL" "authorizedIpRanges rong - can set thu cong"
-            else
-                log_info "IP của bạn: $my_ip"
-                az aks update \
-                    --name "$CLUSTER_NAME" \
-                    --resource-group "$RESOURCE_GROUP" \
-                    --api-server-authorized-ip-ranges "${my_ip}/32" \
-                    --output none 2>/dev/null
-                log_info "Đã set authorizedIpRanges = ${my_ip}/32"
-                log_warn "Lưu ý: Thêm IP các thành viên khác nếu cần!"
-                report_add "5.4.1" "FAIL" "authorizedIpRanges: [] → ${my_ip}/32 (da sua)" "true"
-            fi
-        else
-            report_add "5.4.1" "FAIL" "authorizedIpRanges rong (API Server mo public)"
-        fi
+        report_add "5.4.1" "FAIL" "authorizedIpRanges rong (API Server mo public)"
     else
         # Có IP nhưng kiểm tra có chứa 0.0.0.0/0 không
         local has_open

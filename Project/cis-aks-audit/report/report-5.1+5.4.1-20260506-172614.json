@@ -1,0 +1,31 @@
+{
+  "section": "5.1+5.4.1",
+  "title": "Azure-level Security Controls",
+  "timestamp": "2026-05-06T10:26:15Z",
+  "results": [
+    {
+      "control": "5.1.1",
+      "status": "PASS",
+      "detail": "Defender pricingTier = Standard",
+      "timestamp": "2026-05-06T10:26:14Z"
+    },
+    {
+      "control": "5.1.2",
+      "status": "FAIL",
+      "detail": "Chua co Diagnostic Setting nao duoc cau hinh",
+      "timestamp": "2026-05-06T10:26:15Z"
+    },
+    {
+      "control": "5.1.3",
+      "status": "FAIL",
+      "detail": "Azure Policy Add-on chua bat",
+      "timestamp": "2026-05-06T10:26:15Z"
+    },
+    {
+      "control": "5.4.1",
+      "status": "FAIL",
+      "detail": "authorizedIpRanges rong (API Server mo public)",
+      "timestamp": "2026-05-06T10:26:15Z"
+    }
+  ]
+}

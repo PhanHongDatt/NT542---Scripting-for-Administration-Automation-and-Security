@@ -1,9 +1,10 @@
 #!/bin/bash
 # =====================================================================
-# audit-4.5+4.6.sh - CIS AKS Benchmark Controls 4.5.1 & 4.6.3
+# audit-4.5+4.6.sh - CIS AKS Benchmark Controls 4.5.1, 4.6.1 & 4.6.3
 #
 # Controls:
 #   4.5.1 - Ưu tiên sử dụng Secret dưới dạng file (volume mount) thay vì env vars
+#   4.6.1 - Ensure that namespaces have ResourceQuotas
 #   4.6.3 - Không nên sử dụng namespace 'default' cho workloads
 # =====================================================================
 
@@ -63,6 +64,50 @@ check_4_5_1() {
 }
 
 # ─────────────────────────────────────────
+#  4.6.1 - Ensure that ResourceQuotas are applied to namespaces
+#
+#  Lý do: Không giới hạn resource có thể dẫn đến 1 namespace dùng cạn kiệt tài nguyên cluster.
+# ─────────────────────────────────────────
+check_4_6_1() {
+    log_section "4.6.1 - Ensure that ResourceQuotas are applied to namespaces"
+    log_info "Lý do: Giới hạn tài nguyên ở cấp namespace ngăn chặn việc 1 app ăn hết CPU/RAM của cluster"
+
+    local all_ns
+    all_ns=$(kubectl get ns --no-headers -o custom-columns=':metadata.name' 2>/dev/null \
+        | grep -vE '^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$')
+
+    if [ -z "$all_ns" ]; then
+        log_warn "4.6.1: Không lấy được danh sách namespaces"
+        report_add "4.6.1" "WARN" "Khong lay duoc danh sach namespaces"
+        return
+    fi
+
+    local fail_list=""
+    local pass_count=0
+    local fail_count=0
+
+    while IFS= read -r ns; do
+        [ -z "$ns" ] && continue
+        local rq_count
+        rq_count=$(kubectl get resourcequota -n "$ns" --no-headers 2>/dev/null | grep -c .)
+        if [ "$rq_count" -eq 0 ]; then
+            log_fail "  ✗ Namespace '$ns': không có ResourceQuota"
+            fail_list="${fail_list}${ns} "
+            ((fail_count++))
+        else
+            log_pass "  ✓ Namespace '$ns': $rq_count ResourceQuota"
+            ((pass_count++))
+        fi
+    done <<< "$all_ns"
+
+    if [ "$fail_count" -eq 0 ]; then
+        report_add "4.6.1" "PASS" "Tat ca cac namespace deu co ResourceQuota"
+    else
+        report_add "4.6.1" "FAIL" "$fail_count namespace thieu ResourceQuota: ${fail_list% }"
+    fi
+}
+
+# ─────────────────────────────────────────
 #  4.6.3 - Ensure that the default namespace is not used
 #
 #  Lý do: Namespace 'default' không có các rào cản bảo mật mặc định.
@@ -102,6 +147,7 @@ main() {
     echo -e "${C_BLUE}========================================================${C_RESET}"
 
     check_4_5_1
+    check_4_6_1
     check_4_6_3
 
     report_print_summary

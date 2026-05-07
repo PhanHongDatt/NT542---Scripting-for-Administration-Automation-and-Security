@@ -1,0 +1,25 @@
+{
+  "section": "4.5+4.6",
+  "title": "Secrets and Namespaces",
+  "timestamp": "2026-05-06T10:29:06Z",
+  "results": [
+    {
+      "control": "4.5.1",
+      "status": "FAIL",
+      "detail": "2 container dung Secret qua env vars",
+      "timestamp": "2026-05-06T10:29:06Z"
+    },
+    {
+      "control": "4.6.1",
+      "status": "FAIL",
+      "detail": "4 namespace thieu ResourceQuota: default dev staging tigera-operator",
+      "timestamp": "2026-05-06T10:29:06Z"
+    },
+    {
+      "control": "4.6.3",
+      "status": "PASS",
+      "detail": "Namespace default khong co workloads",
+      "timestamp": "2026-05-06T10:29:06Z"
+    }
+  ]
+}

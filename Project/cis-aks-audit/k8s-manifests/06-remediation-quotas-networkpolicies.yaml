@@ -1,0 +1,81 @@
+# ============================================================================
+# 06-remediation-quotas-networkpolicies.yaml
+# Baseline controls for remediation:
+#   4.4.2 - NetworkPolicy exists in user/default namespaces
+#   4.6.1 - ResourceQuota exists in user/default namespaces
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: default
+  labels:
+    audit-test: "true"
+    remediation: "true"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: staging
+  labels:
+    audit-test: "true"
+    remediation: "true"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: rq-baseline
+  namespace: default
+  labels:
+    audit-test: "true"
+    remediation: "true"
+spec:
+  hard:
+    pods: "20"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: rq-baseline
+  namespace: dev
+  labels:
+    audit-test: "true"
+    remediation: "true"
+spec:
+  hard:
+    pods: "20"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: rq-baseline
+  namespace: staging
+  labels:
+    audit-test: "true"
+    remediation: "true"
+spec:
+  hard:
+    pods: "20"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi

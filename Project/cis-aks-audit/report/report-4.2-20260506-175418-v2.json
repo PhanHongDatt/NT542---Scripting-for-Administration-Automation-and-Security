@@ -1,0 +1,37 @@
+{
+  "section": "4.2",
+  "title": "Pod Security Standards",
+  "timestamp": "2026-05-06T10:54:18Z",
+  "results": [
+    {
+      "control": "4.2.1",
+      "status": "PASS",
+      "detail": "0 pods vi phạm (đã kiểm tra 3 user pods)",
+      "timestamp": "2026-05-06T10:54:18Z"
+    },
+    {
+      "control": "4.2.2",
+      "status": "PASS",
+      "detail": "0 pods vi phạm (đã kiểm tra 3 user pods)",
+      "timestamp": "2026-05-06T10:54:18Z"
+    },
+    {
+      "control": "4.2.3",
+      "status": "PASS",
+      "detail": "0 pods vi phạm (đã kiểm tra 3 user pods)",
+      "timestamp": "2026-05-06T10:54:18Z"
+    },
+    {
+      "control": "4.2.4",
+      "status": "PASS",
+      "detail": "0 pods vi phạm (đã kiểm tra 3 user pods)",
+      "timestamp": "2026-05-06T10:54:18Z"
+    },
+    {
+      "control": "4.2.5",
+      "status": "PASS",
+      "detail": "0 pods vi phạm (đã kiểm tra 3 user pods)",
+      "timestamp": "2026-05-06T10:54:18Z"
+    }
+  ]
+}

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKS Security Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 40px 0; margin-bottom: 30px; }
+        .stats-card { border: none; border-radius: 12px; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .stats-card:hover { transform: translateY(-5px); }
+        .section-header { background-color: #e9ecef; font-weight: bold; color: #495057; }
+        .table { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .badge { font-size: 0.85rem; padding: 0.5em 0.8em; }
+        .nav-tabs .nav-link.active { font-weight: bold; color: #1a1a2e; border-bottom: 3px solid #1a1a2e; }
+        .nav-tabs .nav-link { color: #6c757d; }
+    </style>
+</head>
+<body>
+<div class="hero">
+    <div class="container">
+        <h1 class="display-5 fw-bold">AKS Security Dashboard</h1>
+        <p class="lead mb-0">CIS Microsoft Azure Kubernetes Service (AKS) Benchmark v1.8.0</p>
+        <p class="text-info small mt-2">Quét lần cuối: 06/05/2026 18:00:48</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    
+    <!-- TABS NAV -->
+    <ul class="nav nav-tabs mb-4" id="reportTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="before-tab" data-bs-toggle="tab" data-bs-target="#before" type="button" role="tab">Lần 1: Trước Remediation</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="after-tab" data-bs-toggle="tab" data-bs-target="#after" type="button" role="tab">Lần 2: Sau Remediation (V2)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="compare-tab" data-bs-toggle="tab" data-bs-target="#compare" type="button" role="tab">So sánh</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="guide-tab" data-bs-toggle="tab" data-bs-target="#guide" type="button" role="tab">Quy trình & Lệnh chạy</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="video-tab" data-bs-toggle="tab" data-bs-target="#video" type="button" role="tab">Kịch bản video</button>
+        </li>
+    </ul>
+
+    <!-- TABS CONTENT -->
+    <div class="tab-content" id="reportTabsContent">
+        
+        <!-- LẦN 1: BEFORE -->
+        <div class="tab-pane fade show active" id="before" role="tabpanel">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card stats-card bg-success text-white text-center p-3">
+                        <h2>20</h2><p class="mb-0">PASS</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stats-card bg-danger text-white text-center p-3">
+                        <h2>11</h2><p class="mb-0">FAIL</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stats-card bg-secondary text-white text-center p-3">
+                        <h2>31</h2><p class="mb-0">TỔNG CỘNG</p>
+                    </div>
+                </div>
+            </div>
+            <table class="table table-hover align-middle">
+                <thead class="table-dark"><tr><th>Control ID</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead>
+                <tbody><tr class='section-header'><td colspan='3'>Section 5.4.3+5.4.4: Azure-level Network Security</td></tr><tr>
+                <td style='width: 15%'><strong>5.4.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Tat ca nodes khong co public IP</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.4.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>networkPolicy = calico (2 policy objects)</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 5.1+5.4.1: Azure-level Security Controls</td></tr><tr>
+                <td style='width: 15%'><strong>5.1.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Defender pricingTier = Standard</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.1.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>Chua co Diagnostic Setting nao duoc cau hinh</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.1.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>Azure Policy Add-on chua bat</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.4.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>authorizedIpRanges rong (API Server mo public)</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.5+4.6: Secrets and Namespaces</td></tr><tr>
+                <td style='width: 15%'><strong>4.5.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>2 container dung Secret qua env vars</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.6.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>3 namespace thieu ResourceQuota: default dev staging</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.6.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Namespace default khong co workloads</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.4: Network Policies and CNI</td></tr><tr>
+                <td style='width: 15%'><strong>4.4.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>networkPlugin=azure, networkPolicy=calico</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.4.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>2 namespace thieu NetworkPolicy: default staging</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.2: Pod Security Standards</td></tr><tr>
+                <td style='width: 15%'><strong>4.2.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>1 pods vi phạm: staging/busybox-bad → container: busybox</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>1 pods vi phạm: staging/busybox-bad</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>1 pods vi phạm: staging/busybox-bad</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>1 pods vi phạm: staging/busybox-bad</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.5</strong></td>
+                <td style='width: 15%'><span class='badge bg-danger'>FAIL</span></td>
+                <td>1 pods vi phạm: staging/busybox-bad → container: busybox</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.1: RBAC and Service Accounts</td></tr><tr>
+                <td style='width: 15%'><strong>4.1.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Chỉ các tài khoản hệ thống mới có quyền cluster-admin.</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.1.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Không phát hiện wildcard (*) trong các Roles tùy chỉnh.</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 3.2: Worker Node Kubelet Configuration</td></tr><tr>
+                <td style='width: 15%'><strong>3.2.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--anonymous-auth = false</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--authorization-mode = Webhook</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--client-ca-file = /etc/kubernetes/certs/ca.crt</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--read-only-port = 0</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.5</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--streaming-connection-idle-timeout = 4h</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.6</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--make-iptables-util-chains = true (mac dinh)</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.7</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--event-qps = 0</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.8</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--rotate-certificates = true</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.9</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>RotateKubeletServerCertificate = true (feature-gates)</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 3.1: Worker Node File Permissions</td></tr><tr>
+                <td style='width: 15%'><strong>3.1.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Permission: 600</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.1.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Ownership: root:root</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.1.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Permission: 600</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.1.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Ownership: root:root</td>
+            </tr></tbody>
+            </table>
+        </div>
+
+        <!-- LẦN 2: AFTER -->
+        <div class="tab-pane fade" id="after" role="tabpanel">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card stats-card bg-success text-white text-center p-3">
+                        <h2>31 <span class="fs-5 text-light">(Tăng 11)</span></h2><p class="mb-0">PASS</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stats-card bg-danger text-white text-center p-3">
+                        <h2>0 <span class="fs-5 text-light">(Giảm 11)</span></h2><p class="mb-0">FAIL</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stats-card bg-secondary text-white text-center p-3">
+                        <h2>31</h2><p class="mb-0">TỔNG CỘNG</p>
+                    </div>
+                </div>
+            </div>
+            <table class="table table-hover align-middle">
+                <thead class="table-dark"><tr><th>Control ID</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead>
+                <tbody><tr class='section-header'><td colspan='3'>Section 5.4.3+5.4.4: Azure-level Network Security</td></tr><tr>
+                <td style='width: 15%'><strong>5.4.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Tat ca nodes khong co public IP</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.4.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>networkPolicy = calico (4 policy objects)</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 5.1+5.4.1: Azure-level Security Controls</td></tr><tr>
+                <td style='width: 15%'><strong>5.1.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Defender pricingTier = Standard</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.1.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Diagnostic Setting dang bat</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.1.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Azure Policy Add-on dang bat</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>5.4.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>authorizedIpRanges co 1 entry: 14.169.0.0/16</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.5+4.6: Secrets and Namespaces</td></tr><tr>
+                <td style='width: 15%'><strong>4.5.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Khong su dung Secret qua env vars</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.6.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Tat ca cac namespace deu co ResourceQuota</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.6.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Namespace default khong co workloads</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.4: Network Policies and CNI</td></tr><tr>
+                <td style='width: 15%'><strong>4.4.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>networkPlugin=azure, networkPolicy=calico</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.4.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Tat ca 3 namespace co NetworkPolicy</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.2: Pod Security Standards</td></tr><tr>
+                <td style='width: 15%'><strong>4.2.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>0 pods vi phạm (đã kiểm tra 3 user pods)</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>0 pods vi phạm (đã kiểm tra 3 user pods)</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>0 pods vi phạm (đã kiểm tra 3 user pods)</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>0 pods vi phạm (đã kiểm tra 3 user pods)</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.2.5</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>0 pods vi phạm (đã kiểm tra 3 user pods)</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 4.1: RBAC and Service Accounts</td></tr><tr>
+                <td style='width: 15%'><strong>4.1.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Chỉ các tài khoản hệ thống mới có quyền cluster-admin.</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>4.1.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Không phát hiện wildcard (*) trong các Roles tùy chỉnh.</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 3.2: Worker Node Kubelet Configuration</td></tr><tr>
+                <td style='width: 15%'><strong>3.2.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--anonymous-auth = false</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--authorization-mode = Webhook</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--client-ca-file = /etc/kubernetes/certs/ca.crt</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--read-only-port = 0</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.5</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--streaming-connection-idle-timeout = 4h</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.6</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--make-iptables-util-chains = true (mac dinh)</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.7</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--event-qps = 0</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.8</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>--rotate-certificates = true</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.2.9</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>RotateKubeletServerCertificate = true (feature-gates)</td>
+            </tr><tr class='section-header'><td colspan='3'>Section 3.1: Worker Node File Permissions</td></tr><tr>
+                <td style='width: 15%'><strong>3.1.1</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Permission: 600</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.1.2</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Ownership: root:root</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.1.3</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Permission: 600</td>
+            </tr><tr>
+                <td style='width: 15%'><strong>3.1.4</strong></td>
+                <td style='width: 15%'><span class='badge bg-success'>PASS</span></td>
+                <td>Ownership: root:root</td>
+            </tr></tbody>
+            </table>
+        </div>
+
+        <!-- SO SÁNH -->
+        <div class="tab-pane fade" id="compare" role="tabpanel">
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card bg-primary text-white text-center p-3">
+                        <h2>64%</h2><p class="mb-0">BEFORE PASS RATE</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-success text-white text-center p-3">
+                        <h2>100%</h2><p class="mb-0">AFTER PASS RATE</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-success text-white text-center p-3">
+                        <h2>+11</h2><p class="mb-0">PASS TĂNG</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-danger text-white text-center p-3">
+                        <h2>-11</h2><p class="mb-0">FAIL GIẢM</p>
+                    </div>
+                </div>
+            </div>
+            <table class="table table-hover align-middle">
+                <thead class="table-dark"><tr><th>Chỉ số</th><th>BEFORE</th><th>AFTER</th><th>Thay đổi</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>PASS</strong></td><td>20</td><td>31</td><td class="text-success fw-bold">+11</td></tr>
+                    <tr><td><strong>FAIL</strong></td><td>11</td><td>0</td><td class="text-danger fw-bold">-11</td></tr>
+                    <tr><td><strong>WARN</strong></td><td>0</td><td>0</td><td>0</td></tr>
+                    <tr><td><strong>Tổng controls</strong></td><td>31</td><td>31</td><td>Không đổi</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- GUIDE -->
+        <div class="tab-pane fade" id="guide" role="tabpanel">
+            <div class="card p-4 mt-3">
+                
+<h4>Hướng dẫn chạy hệ thống</h4>
+<p><strong>1. Khởi chạy toàn bộ Audit (Lần 1):</strong></p>
+<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/run-all.sh</code></pre>
+<p><strong>2. Thực hiện Remediation tự động:</strong></p>
+<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/remediation/remediate-3.x.sh
+bash scripts/remediation/remediate-4.x.sh
+bash scripts/remediation/remediate-5.x.sh</code></pre>
+<p><strong>3. Chạy Audit kiểm chứng lại (Lần 2):</strong></p>
+<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/run-audit-v2.sh</code></pre>
+
+            </div>
+        </div>
+
+        <!-- VIDEO SCRIPT -->
+        <div class="tab-pane fade" id="video" role="tabpanel">
+            <div class="card p-4 mt-3">
+                
+<h4>Kịch bản quay video báo cáo</h4>
+<ol>
+  <li><strong>Mở đầu:</strong> giới thiệu đồ án NT542, mục tiêu audit AKS theo CIS AKS Benchmark v1.8.0 và cụm <code>aks-cis-audit</code>.</li>
+  <li><strong>Tab So sánh:</strong> chỉ vào số liệu BEFORE/AFTER, nhấn mạnh FAIL giảm từ <code>11</code> xuống <code>0</code>, PASS tăng từ <code>20</code> lên <code>31</code>.</li>
+  <li><strong>Tab Trước Remediation:</strong> trình bày các lỗi chính: Pod Security 4.2.x, NetworkPolicy 4.4.2, Secret env 4.5.1, ResourceQuota 4.6.1, Diagnostic/Azure Policy/API IP 5.x.</li>
+  <li><strong>Tab Quy trình:</strong> nói rõ 3 lệnh chính: chạy BEFORE, chạy remediation 3.x/4.x/5.x, chạy AFTER.</li>
+  <li><strong>Tab Sau Remediation:</strong> chứng minh toàn bộ controls đã PASS, nêu các thay đổi đã áp dụng: harden pod, mount secret dạng file, thêm NetworkPolicy/ResourceQuota, bật Diagnostic Settings, Azure Policy và authorized IP.</li>
+  <li><strong>Kết thúc:</strong> kết luận hệ thống đã có dashboard bằng chứng, report JSON/HTML và quy trình có thể chạy lại.</li>
+</ol>
+<p class='text-muted mb-0'>Gợi ý quay: zoom trình duyệt 90-100%, đi lần lượt các tab từ trái sang phải, dừng 3-5 giây ở mỗi bảng tổng kết.</p>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

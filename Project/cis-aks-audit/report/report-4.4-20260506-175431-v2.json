@@ -1,0 +1,19 @@
+{
+  "section": "4.4",
+  "title": "Network Policies and CNI",
+  "timestamp": "2026-05-06T10:54:31Z",
+  "results": [
+    {
+      "control": "4.4.1",
+      "status": "PASS",
+      "detail": "networkPlugin=azure, networkPolicy=calico",
+      "timestamp": "2026-05-06T10:54:31Z"
+    },
+    {
+      "control": "4.4.2",
+      "status": "PASS",
+      "detail": "Tat ca 3 namespace co NetworkPolicy",
+      "timestamp": "2026-05-06T10:54:31Z"
+    }
+  ]
+}

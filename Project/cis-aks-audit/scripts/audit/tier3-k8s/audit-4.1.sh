@@ -16,13 +16,17 @@ log_section "ĐANG KIỂM TRA SECTION 4.1: RBAC"
 # ---------------------------------------------------------------------
 log_info "Kiểm tra 4.1.1: cluster-admin role bindings..."
 
-# Lọc các bindings KHÔNG phải hệ thống (không bắt đầu bằng system: hoặc aks-)
+# Lọc các bindings KHÔNG phải hệ thống/managed AKS.
 NON_SYSTEM=$(kubectl get clusterrolebindings -o json | jq -r \
   '[.items[] | select(.roleRef.name=="cluster-admin") | 
+  select((.metadata.labels["kubernetes.io/cluster-service"] // "false") != "true") |
+  select((.metadata.labels["addonmanager.kubernetes.io/mode"] // "") != "Reconcile") |
+  select(.metadata.name | startswith("system:") | not) |
   select(.subjects != null) |
   select(.subjects[]? | 
     (.name | startswith("system:") | not) and 
-    (.name | startswith("aks-") | not)
+    (.name | startswith("aks-") | not) and
+    (.name | startswith("aks:") | not)
   ) | .metadata.name] | unique | .[]' 2>/dev/null)
 
 if [ -z "$NON_SYSTEM" ]; then
@@ -37,16 +41,22 @@ fi
 # ---------------------------------------------------------------------
 log_info "Kiểm tra 4.1.3: Sử dụng wildcard (*) trong Roles..."
 
-# Quét ClusterRoles (bỏ qua system roles)
+# Quét ClusterRoles tùy chỉnh, bỏ qua built-in/system/AKS-managed roles.
 WILD_CROLES=$(kubectl get clusterroles -o json | jq -r \
   '[.items[] | select(.metadata.name | startswith("system:") | not) | 
   select(.metadata.name | startswith("aks:") | not) |
+  select(.metadata.name | startswith("aks-") | not) |
+  select(.metadata.name != "cluster-admin") |
+  select((.metadata.labels["kubernetes.io/cluster-service"] // "false") != "true") |
+  select((.metadata.labels["addonmanager.kubernetes.io/mode"] // "") != "Reconcile") |
   select(.rules[]? | (.resources? // [] | index("*")) or (.verbs? // [] | index("*"))) 
   | .metadata.name] | unique | .[]' 2>/dev/null)
 
-# Quét Roles trong mọi namespace
+# Quét Roles trong user namespaces.
 WILD_ROLES=$(kubectl get roles -A -o json | jq -r \
-  '[.items[] | select(.rules[]? | (.resources? // [] | index("*")) or (.verbs? // [] | index("*"))) 
+  '[.items[] |
+  select(.metadata.namespace | test("^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$") | not) |
+  select(.rules[]? | (.resources? // [] | index("*")) or (.verbs? // [] | index("*"))) 
   | "\(.metadata.namespace)/\(.metadata.name)"] | unique | .[]' 2>/dev/null)
 
 TOTAL_WILD=$(( $(echo "$WILD_CROLES" | grep -c .) + $(echo "$WILD_ROLES" | grep -c .) ))
