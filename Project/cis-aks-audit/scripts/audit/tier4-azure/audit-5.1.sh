@@ -5,9 +5,8 @@
 #
 #  Controls:
 #    5.1.1 - Microsoft Defender for Containers phải bật
-#    5.1.2 - Diagnostic Setting phải bật để capture logs
-#    5.1.3 - Azure Policy Add-on phải được cài đặt
-#    5.4.1 - API Server phải giới hạn IP (authorizedIpRanges)
+#    5.1.2 - Minimize user access to Azure Container Registry (ACR)
+#    5.4.1 - API Server phải giới hạn IP (enablePrivateCluster, enablePublicFqdn, authorizedIpRanges)
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,7 +30,7 @@ check_5_1_1() {
     log_info "Lý do: Defender quét lỗ hổng container image, phát hiện runtime threats"
 
     local defender_json
-    defender_json=$(az security pricing show --name "Containers" --output json 2>/dev/null)
+    defender_json=$(az security pricing show --name "ContainerRegistry" --output json 2>/dev/null)
 
     if [ -z "$defender_json" ] || [ "$defender_json" = "null" ]; then
         log_warn "5.1.1: Không lấy được thông tin Defender (cần quyền Security Reader)"
@@ -98,9 +97,11 @@ check_5_1_2() {
     done < <(echo "$acr_list" | jq -c '.[]' 2>/dev/null)
 
     if [ "$fail_count" -eq 0 ]; then
+        log_pass "5.1.2: Tất cả ACR đều đã tắt Admin Account ✓"
         report_add "5.1.2" "PASS" "Tat ca cac ACR trong Subscription deu da duoc tat tai khoan Admin"
     else
         violating_acrs=$(echo "$violating_acrs" | xargs)
+        log_fail "5.1.2: $fail_count ACR vẫn bật Admin Account: $violating_acrs ✗"
         report_add "5.1.2" "FAIL" "Phat hien $fail_count ACR van dang mo khoa Admin dung chung: $violating_acrs"
     fi
 }
@@ -110,7 +111,7 @@ check_5_1_2() {
 #
 #  API Server là "cửa vào" của Kubernetes. Nếu để public
 #  (authorizedIpRanges rỗng) → attacker có thể tấn công.
-#  Mong đợi: authorizedIpRanges KHÔNG rỗng và KHÔNG chứa 0.0.0.0/0
+#  Kiểm tra theo PDF: enablePrivateCluster, enablePublicFqdn, authorizedIpRanges
 # ─────────────────────────────────────────
 check_5_4_1() {
     log_section "5.4.1 - Restrict Access to the Control Plane Endpoint"
@@ -124,7 +125,31 @@ check_5_4_1() {
         return
     fi
 
-    # Lấy số lượng IP ranges được cấu hình
+    # ── Kiểm tra enablePrivateCluster ──
+    local private_cluster
+    private_cluster=$(echo "$AKS_JSON" | jq -r '.apiServerAccessProfile.enablePrivateCluster // false' 2>/dev/null)
+    log_info "enablePrivateCluster = $private_cluster"
+
+    if [ "$private_cluster" = "true" ]; then
+        log_pass "5.4.1: enablePrivateCluster = true (Private cluster) ✓"
+    else
+        log_info "5.4.1: enablePrivateCluster = false (Public cluster — kiểm tra authorizedIpRanges bên dưới)"
+    fi
+
+    # ── Kiểm tra enablePublicFqdn ──
+    local public_fqdn
+    public_fqdn=$(echo "$AKS_JSON" | jq -r '.apiServerAccessProfile.enablePublicFqdn // "not_set"' 2>/dev/null)
+    log_info "enablePublicFqdn = $public_fqdn"
+
+    if [ "$public_fqdn" = "true" ]; then
+        log_warn "5.4.1: enablePublicFqdn = true — API Server FQDN công khai (nên tắt nếu dùng private cluster)"
+    elif [ "$public_fqdn" = "false" ]; then
+        log_pass "5.4.1: enablePublicFqdn = false ✓"
+    else
+        log_info "5.4.1: enablePublicFqdn = không set (mặc định)"
+    fi
+
+    # ── Kiểm tra authorizedIpRanges ──
     local ip_count
     ip_count=$(echo "$AKS_JSON" | \
         jq '.apiServerAccessProfile.authorizedIpRanges // [] | length' 2>/dev/null)
@@ -136,10 +161,14 @@ check_5_4_1() {
     log_info "authorizedIpRanges ($ip_count entries): $ip_ranges"
 
     if [ "$ip_count" -eq 0 ] 2>/dev/null; then
-        log_fail "5.4.1: authorizedIpRanges = [] → API Server mở public ✗"
-        report_add "5.4.1" "FAIL" "authorizedIpRanges rong (API Server mo public)"
+        if [ "$private_cluster" = "true" ]; then
+            log_pass "5.4.1: Private cluster + authorizedIpRanges rỗng (OK — private endpoint) ✓"
+            report_add "5.4.1" "PASS" "Private cluster, enablePublicFqdn=$public_fqdn"
+        else
+            log_fail "5.4.1: authorizedIpRanges = [] → API Server mở public ✗"
+            report_add "5.4.1" "FAIL" "authorizedIpRanges rong (API Server mo public)"
+        fi
     else
-        # Có IP nhưng kiểm tra có chứa 0.0.0.0/0 không
         local has_open
         has_open=$(echo "$AKS_JSON" | \
             jq '[.apiServerAccessProfile.authorizedIpRanges // [] | .[] | select(. == "0.0.0.0/0")] | length' 2>/dev/null)
@@ -149,7 +178,7 @@ check_5_4_1() {
             report_add "5.4.1" "FAIL" "authorizedIpRanges chua 0.0.0.0/0"
         else
             log_pass "5.4.1: authorizedIpRanges = [$ip_ranges] ✓"
-            report_add "5.4.1" "PASS" "authorizedIpRanges co $ip_count entry: $ip_ranges"
+            report_add "5.4.1" "PASS" "privateCluster=$private_cluster, publicFqdn=$public_fqdn, IPs=$ip_count"
         fi
     fi
 }

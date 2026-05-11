@@ -128,9 +128,9 @@ TAB_VIDEO="
 <ol>
   <li><strong>Mở đầu:</strong> giới thiệu đồ án NT542, mục tiêu audit AKS theo CIS AKS Benchmark v1.8.0 và cụm <code>aks-cis-audit</code>.</li>
   <li><strong>Tab So sánh:</strong> chỉ vào số liệu BEFORE/AFTER, nhấn mạnh FAIL giảm từ <code>$V1_FAIL</code> xuống <code>$V2_FAIL</code>, PASS tăng từ <code>$V1_PASS</code> lên <code>$V2_PASS</code>.</li>
-  <li><strong>Tab Trước Remediation:</strong> trình bày các lỗi chính: Pod Security 4.2.x, NetworkPolicy 4.4.2, Secret env 4.5.1, ResourceQuota 4.6.1, Diagnostic/Azure Policy/API IP 5.x.</li>
+  <li><strong>Tab Trước Remediation:</strong> trình bày các lỗi chính: Pod Security 4.2.x, NetworkPolicy 4.4.2, Secret env 4.5.1, Namespace boundaries 4.6.1, API IP 5.x.</li>
   <li><strong>Tab Quy trình:</strong> nói rõ 3 lệnh chính: chạy BEFORE, chạy remediation 3.x/4.x/5.x, chạy AFTER.</li>
-  <li><strong>Tab Sau Remediation:</strong> chứng minh toàn bộ controls đã PASS, nêu các thay đổi đã áp dụng: harden pod, mount secret dạng file, thêm NetworkPolicy/ResourceQuota, bật Diagnostic Settings, Azure Policy và authorized IP.</li>
+  <li><strong>Tab Sau Remediation:</strong> chứng minh toàn bộ controls đã PASS, nêu các thay đổi đã áp dụng: harden pod, mount secret dạng file, thêm NetworkPolicy, tạo Namespace boundaries, authorized IP.</li>
   <li><strong>Kết thúc:</strong> kết luận hệ thống đã có dashboard bằng chứng, report JSON/HTML và quy trình có thể chạy lại.</li>
 </ol>
 <p class='text-muted mb-0'>Gợi ý quay: zoom trình duyệt 90-100%, đi lần lượt các tab từ trái sang phải, dừng 3-5 giây ở mỗi bảng tổng kết.</p>

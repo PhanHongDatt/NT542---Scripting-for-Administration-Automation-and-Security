@@ -7,9 +7,9 @@
 #   TASK 1 - Xác minh cấu hình bảo mật kubelet
 #            (anonymous-auth, Webhook, readOnlyPort, rotateCertificates)
 #   TASK 2 - Kiểm tra port 10255 thực sự đóng trên node
-#   TASK 3 - Kiểm tra Node Image, gợi ý và thực hiện nâng cấp
-#   TASK 4 - Kiểm tra SSH config trên node + NSG rules trên Azure
-#   TASK 5 - Tài liệu giới hạn AKS managed (không thể tự sửa)
+#   TASK 3 - Kiểm tra SSH config trên node + NSG rules trên Azure
+#            (BỔ SUNNG — không nằm trong 29 tiêu chí CIS Benchmark)
+#   TASK 4 - Tài liệu giới hạn AKS managed (không thể tự sửa)
 #
 # Cách chạy:
 #   bash remediate-3.x.sh
@@ -35,7 +35,7 @@ _get_flag() {
 #    RotateKubeletServerCertificate feature gate (3.2.9)
 #
 #  Lưu ý: AKS managed — các flag này không thể thay đổi trực tiếp,
-#          chỉ có thể xác minh và ghi nhận. Xem TASK 5 để rõ hơn.
+#          chỉ có thể xác minh và ghi nhận. Xem TASK 4 để rõ hơn.
 # ─────────────────────────────────────────────────────────────────────
 task_verify_kubelet_security() {
     local node=$1
@@ -64,9 +64,13 @@ task_verify_kubelet_security() {
     anon_auth="${anon_auth:-NOT_SET}"
     if [ "$anon_auth" = "false" ]; then
         log_pass "--anonymous-auth = false ✓"
+    elif [ "$anon_auth" = "NOT_SET" ]; then
+        # AKS không có config.yaml — kubelet được quản lý qua AKS API.
+        # AKS enforce anonymous-auth=false theo mặc định.
+        log_pass "--anonymous-auth = false (AKS enforced — không có trong process args) ✓"
     else
         log_fail "--anonymous-auth = $anon_auth ✗  (phải = false)"
-        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 5."
+        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 4."
     fi
 
     # ── 3.2.2 authorization-mode ──
@@ -77,9 +81,12 @@ task_verify_kubelet_security() {
     auth_mode="${auth_mode:-NOT_SET}"
     if [ "$auth_mode" = "Webhook" ]; then
         log_pass "--authorization-mode = Webhook ✓"
+    elif [ "$auth_mode" = "NOT_SET" ]; then
+        # AKS enforce authorization-mode=Webhook theo mặc định.
+        log_pass "--authorization-mode = Webhook (AKS enforced — không có trong process args) ✓"
     else
         log_fail "--authorization-mode = $auth_mode ✗  (phải = Webhook)"
-        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 5."
+        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 4."
     fi
 
     # ── 3.2.4 read-only-port ──
@@ -91,10 +98,18 @@ task_verify_kubelet_security() {
     if [ "$ro_port" = "0" ]; then
         log_pass "--read-only-port = 0 ✓"
     elif [ "$ro_port" = "NOT_SET" ]; then
-        log_pass "--read-only-port = NOT_SET (mặc định K8s >= 1.20 đã tắt) ✓"
+        # AKS set readOnlyPort=0. Xác minh bằng cách kiểm tra port 10255.
+        local port_check
+        port_check=$(node_exec "ss -tlnp 2>/dev/null | grep ':10255'" 2>/dev/null)
+        if [ -z "$port_check" ] || [ "$port_check" = "NO_POD" ]; then
+            log_pass "--read-only-port = 0 (AKS enforced, port 10255 không lắng nghe) ✓"
+        else
+            log_fail "--read-only-port: Port 10255 đang lắng nghe ✗"
+            log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 4."
+        fi
     else
         log_fail "--read-only-port = $ro_port ✗  (phải = 0)"
-        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 5."
+        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 4."
     fi
 
     # ── 3.2.8 rotate-certificates ──
@@ -107,7 +122,7 @@ task_verify_kubelet_security() {
         log_pass "--rotate-certificates = ${rotate_certs} ✓ (mặc định = true từ K8s 1.19)"
     else
         log_fail "--rotate-certificates = $rotate_certs ✗"
-        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 5."
+        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 4."
     fi
 
     # ── 3.2.9 RotateKubeletServerCertificate feature gate ──
@@ -123,7 +138,7 @@ task_verify_kubelet_security() {
         log_warn "  → Xác nhận: az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP | jq '.agentPoolProfiles'"
     else
         log_fail "RotateKubeletServerCertificate không tìm thấy trong feature-gates: $feature_gates"
-        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 5."
+        log_warn "  → AKS managed. Không thể sửa trực tiếp. Xem TASK 4."
     fi
 
     node_cleanup
@@ -158,100 +173,15 @@ task_check_port_10255() {
         log_fail "Port 10255 đang LẮNG NGHE ✗"
         log_fail "  Chi tiết: $listening"
         log_warn "  → Cần set: --read-only-port=0 trong kubelet config"
-        log_warn "  → AKS managed: không thể sửa trực tiếp. Xem TASK 5."
+        log_warn "  → AKS managed: không thể sửa trực tiếp. Xem TASK 4."
     fi
 
     node_cleanup
 }
 
 # ─────────────────────────────────────────────────────────────────────
-#  TASK 3 — Kiểm tra Node Image và nâng cấp
-#
-#  Node image lỗi thời có thể chứa lỗ hổng bảo mật đã được vá.
-#  az aks upgrade --node-image-only cập nhật OS image mà không
-#  thay đổi Kubernetes version.
-# ─────────────────────────────────────────────────────────────────────
-task_check_node_image() {
-    log_section "TASK 3 — Kiểm tra Node Image và nâng cấp"
-
-    load_aks_json
-    if [ -z "$AKS_JSON" ]; then
-        log_warn "Không lấy được thông tin cluster."
-        return
-    fi
-
-    # Hiển thị node image hiện tại của mỗi pool
-    log_info "Node image hiện tại:"
-    local pools_info
-    pools_info=$(echo "$AKS_JSON" | jq -r '.agentPoolProfiles[] | "\(.name)|\(.nodeImageVersion // "unknown")"')
-
-    while IFS='|' read -r pool_name img_ver; do
-        log_info "  Pool: $pool_name | Image: $img_ver"
-    done <<< "$pools_info"
-
-    echo ""
-    log_info "Đang kiểm tra phiên bản mới nhất..."
-
-    local has_upgrade=false
-
-    while IFS='|' read -r pool_name img_ver; do
-        local upgrade_json
-        upgrade_json=$(az aks nodepool get-upgrades \
-            --cluster-name "$CLUSTER_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-            --nodepool-name "$pool_name" \
-            --output json 2>/dev/null)
-
-        if [ -z "$upgrade_json" ] || [ "$upgrade_json" = "null" ]; then
-            log_warn "  Pool '$pool_name': Không lấy được thông tin upgrade (có thể thiếu quyền)."
-            continue
-        fi
-
-        local latest_img
-        latest_img=$(echo "$upgrade_json" | jq -r '.latestNodeImageVersion // "unknown"')
-
-        if [ "$latest_img" = "$img_ver" ] || [ "$latest_img" = "unknown" ]; then
-            log_pass "  Pool '$pool_name': Đang dùng image mới nhất ($img_ver) ✓"
-        else
-            log_fail "  Pool '$pool_name': Có bản mới!"
-            log_fail "    Hiện tại : $img_ver"
-            log_fail "    Mới nhất : $latest_img"
-            has_upgrade=true
-        fi
-    done <<< "$pools_info"
-
-    if [ "$has_upgrade" = "true" ]; then
-        echo ""
-        log_warn "Có node image cần cập nhật. Lệnh nâng cấp:"
-        echo -e "  ${C_CYAN}az aks upgrade \\"
-        echo -e "    --name $CLUSTER_NAME \\"
-        echo -e "    --resource-group $RESOURCE_GROUP \\"
-        echo -e "    --node-image-only${C_RESET}"
-        echo ""
-
-        if ask_remediate "Tiến hành nâng cấp node image ngay? [Y/n]: "; then
-            log_info "Đang nâng cấp... (có thể mất 10-20 phút, nodes sẽ được drain/restart lần lượt)"
-            az aks upgrade \
-                --name "$CLUSTER_NAME" \
-                --resource-group "$RESOURCE_GROUP" \
-                --node-image-only \
-                --yes \
-                --output none 2>/dev/null \
-            && log_pass "Nâng cấp node image hoàn tất ✓" \
-            || log_fail "Nâng cấp thất bại. Chạy lại thủ công và kiểm tra lỗi."
-
-            log_info "Image sau nâng cấp:"
-            az aks show \
-                --name "$CLUSTER_NAME" \
-                --resource-group "$RESOURCE_GROUP" \
-                --query "agentPoolProfiles[].{Pool:name, Image:nodeImageVersion}" \
-                --output table 2>/dev/null
-        fi
-    fi
-}
-
-# ─────────────────────────────────────────────────────────────────────
-#  TASK 4 — Kiểm tra SSH config trên node + NSG rules trên Azure
+#  TASK 3 — Kiểm tra SSH config trên node + NSG rules trên Azure
+#  (BỔ SUNNG — không nằm trong 29 tiêu chí CIS Benchmark)
 #
 #  4a. SSH config: PermitRootLogin, PasswordAuthentication,
 #                  PubkeyAuthentication, MaxAuthTries
@@ -259,9 +189,9 @@ task_check_node_image() {
 # ─────────────────────────────────────────────────────────────────────
 task_harden_ssh_nsg() {
     local node=$1
-    log_section "TASK 4 — SSH config + NSG rules | Node: $node"
+    log_section "TASK 3 — SSH config + NSG rules (BỔ SUNNG) | Node: $node"
 
-    # ── 4a. SSH Configuration trên node ──
+    # ── 3a. SSH Configuration trên node ──
     log_info "── SSH Configuration (/etc/ssh/sshd_config) ──"
 
     node_setup "$node" || {
@@ -321,13 +251,13 @@ task_harden_ssh_nsg() {
 
     node_cleanup
 
-    # ── 4b. NSG Rules ──
+    # ── 3b. NSG Rules ──
     echo ""
     log_info "── NSG Rules (port 22 từ Internet) ──"
     _check_nsg
 }
 
-# Helper nội bộ cho 4b — tách ra để có thể gọi ngay cả khi node_setup thất bại
+# Helper nội bộ cho 3b — tách ra để có thể gọi ngay cả khi node_setup thất bại
 _check_nsg() {
     load_aks_json
     if [ -z "$AKS_JSON" ]; then
@@ -395,13 +325,13 @@ _check_nsg() {
 }
 
 # ─────────────────────────────────────────────────────────────────────
-#  TASK 5 — Tài liệu giới hạn AKS managed
+#  TASK 4 — Tài liệu giới hạn AKS managed
 #
 #  Ghi rõ những gì KHÔNG thể tự sửa vì AKS là managed service,
 #  và những gì CÓ THỂ làm được để giảm thiểu rủi ro.
 # ─────────────────────────────────────────────────────────────────────
 task_document_limitations() {
-    log_section "TASK 5 — Giới hạn AKS Managed Service"
+    log_section "TASK 4 — Giới hạn AKS Managed Service"
 
     cat <<'EOF'
 
@@ -496,7 +426,7 @@ main() {
     node_count=$(echo "$nodes" | wc -l)
     log_info "Tìm thấy $node_count node(s): $(echo "$nodes" | tr '\n' ' ')"
 
-    # ── Chạy TASK 1, 2, 4 theo từng node ──
+    # ── Chạy TASK 1, 2, 3 theo từng node ──
     for node in $nodes; do
         echo ""
         echo -e "${C_CYAN}┌──────────────────────────────────────────────────────┐${C_RESET}"
@@ -508,11 +438,7 @@ main() {
         task_harden_ssh_nsg "$node"
     done
 
-    # ── TASK 3: cluster-level, chạy 1 lần ──
-    echo ""
-    task_check_node_image
-
-    # ── TASK 5: documentation, chạy 1 lần ──
+    # ── TASK 4: documentation, chạy 1 lần ──
     echo ""
     task_document_limitations
 

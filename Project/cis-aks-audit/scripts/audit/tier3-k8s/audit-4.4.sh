@@ -77,7 +77,7 @@ check_4_4_2() {
     # Lấy danh sách namespace, bỏ qua system namespaces
     local all_ns
     all_ns=$(kubectl get ns --no-headers -o custom-columns=':metadata.name' 2>/dev/null \
-        | grep -vE '^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$')
+        | grep -vE '^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc|azure-extensions-usage-system)$')
 
     if [ -z "$all_ns" ]; then
         log_warn "4.4.2: Không lấy được danh sách namespaces"

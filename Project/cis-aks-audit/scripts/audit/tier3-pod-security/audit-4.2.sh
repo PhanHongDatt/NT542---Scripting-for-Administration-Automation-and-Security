@@ -31,7 +31,7 @@ report_init "4.2" "Pod Security Standards"
 #  CẤU HÌNH
 # ─────────────────────────────────────────
 # Danh sách namespace hệ thống → bỏ qua khi audit (AKS quản lý, không sửa được)
-SYSTEM_NS_REGEX="^(kube-system|kube-public|kube-node-lease|calico-system|tigera-operator|gatekeeper-system)$"
+SYSTEM_NS_REGEX="^(kube-system|kube-public|kube-node-lease|calico-system|tigera-operator|gatekeeper-system|azure-arc|azure-extensions-usage-system)$"
 
 # ─────────────────────────────────────────
 #  1. LẤY DỮ LIỆU PODS (chỉ 1 lần duy nhất)

@@ -1,8 +1,8 @@
 # ============================================================================
 # 06-remediation-quotas-networkpolicies.yaml
 # Baseline controls for remediation:
-#   4.4.2 - NetworkPolicy exists in user/default namespaces
-#   4.6.1 - ResourceQuota exists in user/default namespaces
+#   4.4.2 - Ensure that all Namespaces have Network Policies defined
+#   4.6.1 - Create administrative boundaries between resources using namespaces
 # ============================================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

@@ -1,0 +1,19 @@
+{
+  "section": "4.1",
+  "title": "RBAC and Service Accounts",
+  "timestamp": "2026-05-11T18:05:14Z",
+  "results": [
+    {
+      "control": "4.1.1",
+      "status": "PASS",
+      "detail": "Chỉ các tài khoản hệ thống mới có quyền cluster-admin.",
+      "timestamp": "2026-05-11T18:05:14Z"
+    },
+    {
+      "control": "4.1.3",
+      "status": "PASS",
+      "detail": "Không phát hiện wildcard (*) trong các Roles tùy chỉnh.",
+      "timestamp": "2026-05-11T18:05:14Z"
+    }
+  ]
+}

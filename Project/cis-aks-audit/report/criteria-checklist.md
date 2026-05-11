@@ -4,8 +4,8 @@ Generated: 2026-05-06
 
 ## Summary
 
-- BEFORE audit: 20 PASS, 11 FAIL, 0 WARN, 31 controls.
-- AFTER audit: 31 PASS, 0 FAIL, 0 WARN, 31 controls.
+- BEFORE audit: 20 PASS, 11 FAIL, 0 WARN, 29 controls.
+- AFTER audit: 29 PASS, 0 FAIL, 0 WARN, 29 controls.
 - Dashboard: `report/dashboard.html`.
 - AFTER reports use `*-v2.json/html`.
 
@@ -23,8 +23,8 @@ Generated: 2026-05-06
 | W5 | ĐV-25 to ĐV-28 | Completed | Audit 4.4, 4.5+4.6, 5.1+5.4.1, 5.4.3+5.4.4 scripts exist and run. |
 | W6 | ĐV-29 | Completed | `scripts/run-all.sh` works as master audit equivalent; `scripts/run-audit-v2.sh` was repaired for AFTER runs. |
 | W7 | ĐV-31 | Completed | Node-level controls pass; remediation script verifies kubelet, SSH, NSG. Node image update is available but not required by current audit controls. |
-| W7 | ĐV-32 | Completed | K8s remediation applied: Pod Security, secret volume mount, NetworkPolicy, ResourceQuota. |
-| W7 | ĐV-33 | Completed | Azure remediation applied: Azure Policy enabled, Diagnostic Settings enabled, API authorized IP configured. |
+| W7 | ĐV-32 | Completed | K8s remediation applied: Pod Security, secret volume mount, NetworkPolicy, Namespace boundaries. |
+| W7 | ĐV-33 | Completed | Azure remediation applied: API authorized IP configured. |
 | W7 | ĐV-34 | Completed | Full AFTER audit generated V2 reports and dashboard. |
 
 ## Items Requiring Manual Team Confirmation

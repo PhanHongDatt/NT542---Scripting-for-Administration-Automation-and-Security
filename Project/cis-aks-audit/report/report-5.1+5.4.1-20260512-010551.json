@@ -1,0 +1,25 @@
+{
+  "section": "5.1+5.4.1",
+  "title": "Azure-level Security Controls",
+  "timestamp": "2026-05-11T18:05:52Z",
+  "results": [
+    {
+      "control": "5.1.1",
+      "status": "FAIL",
+      "detail": "Defender pricingTier = Free (tat)",
+      "timestamp": "2026-05-11T18:05:52Z"
+    },
+    {
+      "control": "5.1.2",
+      "status": "PASS",
+      "detail": "Khong phat hien thuc the ACR nao (Khong ton tai nguy co ranh gioi an ninh tu Admin Account)",
+      "timestamp": "2026-05-11T18:05:52Z"
+    },
+    {
+      "control": "5.4.1",
+      "status": "PASS",
+      "detail": "privateCluster=false, publicFqdn=not_set, IPs=1",
+      "timestamp": "2026-05-11T18:05:52Z"
+    }
+  ]
+}

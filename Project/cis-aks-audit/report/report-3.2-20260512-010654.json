@@ -1,0 +1,61 @@
+{
+  "section": "3.2",
+  "title": "Worker Node Kubelet Configuration",
+  "timestamp": "2026-05-11T18:06:55Z",
+  "results": [
+    {
+      "control": "3.2.1",
+      "status": "PASS",
+      "detail": "--anonymous-auth = false (AKS enforced)",
+      "timestamp": "2026-05-11T18:06:54Z"
+    },
+    {
+      "control": "3.2.2",
+      "status": "PASS",
+      "detail": "--authorization-mode = Webhook (AKS enforced)",
+      "timestamp": "2026-05-11T18:06:54Z"
+    },
+    {
+      "control": "3.2.3",
+      "status": "PASS",
+      "detail": "--client-ca-file = AKS managed (Certificate Auth)",
+      "timestamp": "2026-05-11T18:06:54Z"
+    },
+    {
+      "control": "3.2.4",
+      "status": "PASS",
+      "detail": "readOnlyPort = 0 (AKS enforced)",
+      "timestamp": "2026-05-11T18:06:55Z"
+    },
+    {
+      "control": "3.2.5",
+      "status": "PASS",
+      "detail": "--streaming-connection-idle-timeout = 4h (mac dinh)",
+      "timestamp": "2026-05-11T18:06:55Z"
+    },
+    {
+      "control": "3.2.6",
+      "status": "PASS",
+      "detail": "--make-iptables-util-chains = true (mac dinh)",
+      "timestamp": "2026-05-11T18:06:55Z"
+    },
+    {
+      "control": "3.2.7",
+      "status": "PASS",
+      "detail": "--event-qps = 50 (mac dinh)",
+      "timestamp": "2026-05-11T18:06:55Z"
+    },
+    {
+      "control": "3.2.8",
+      "status": "PASS",
+      "detail": "--rotate-certificates = true (mac dinh)",
+      "timestamp": "2026-05-11T18:06:55Z"
+    },
+    {
+      "control": "3.2.9",
+      "status": "PASS",
+      "detail": "RotateKubeletServerCertificate = true (mac dinh)",
+      "timestamp": "2026-05-11T18:06:55Z"
+    }
+  ]
+}

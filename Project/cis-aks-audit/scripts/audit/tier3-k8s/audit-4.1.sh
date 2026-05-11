@@ -55,7 +55,7 @@ WILD_CROLES=$(kubectl get clusterroles -o json | jq -r \
 # Quét Roles trong user namespaces.
 WILD_ROLES=$(kubectl get roles -A -o json | jq -r \
   '[.items[] |
-  select(.metadata.namespace | test("^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$") | not) |
+  select(.metadata.namespace | test("^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc|azure-extensions-usage-system)$") | not) |
   select(.rules[]? | (.resources? // [] | index("*")) or (.verbs? // [] | index("*"))) 
   | "\(.metadata.namespace)/\(.metadata.name)"] | unique | .[]' 2>/dev/null)
 

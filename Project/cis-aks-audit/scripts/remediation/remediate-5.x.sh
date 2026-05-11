@@ -2,7 +2,7 @@
 # =====================================================================
 # remediate-5.x.sh
 # Remediation cho CIS AKS Benchmark Section 5.x
-# Tự động bật Defender, Azure Policy Add-on, và cấu hình IP API Server.
+# Tự động bật Defender và cấu hình IP API Server.
 # =====================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,81 +36,16 @@ main() {
 
     # 5.1.1 - Defender
     local pricing_tier
-    pricing_tier=$(az security pricing show --name "Containers" --query pricingTier -o tsv 2>/dev/null)
+    pricing_tier=$(az security pricing show --name "ContainerRegistry" --query pricingTier -o tsv 2>/dev/null)
     if [ "$pricing_tier" = "Free" ]; then
         if ask_remediate "5.1.1: Bật Microsoft Defender for Containers (Standard)? [Y/n]: "; then
             log_info "Đang cấu hình Defender..."
-            az security pricing create --name "Containers" --tier "Standard" --output none 2>/dev/null \
+            az security pricing create --name "ContainerRegistry" --tier "Standard" --output none 2>/dev/null \
             && log_pass "Đã bật Microsoft Defender for Containers. ✓" \
             || log_fail "Bật Microsoft Defender for Containers thất bại."
         fi
     else
         log_info "5.1.1: Defender for Containers đã bật ($pricing_tier). ✓"
-    fi
-
-    echo ""
-    # 5.1.2 - Diagnostic Settings
-    local cluster_id
-    cluster_id=$(echo "$AKS_JSON" | jq -r '.id // ""')
-    local workspace_id
-    workspace_id=$(echo "$AKS_JSON" | jq -r '.addonProfiles.omsagent.config.logAnalyticsWorkspaceResourceID // ""')
-    local diag_count
-    diag_count=$(MSYS_NO_PATHCONV=1 az monitor diagnostic-settings list --resource "$cluster_id" --query "length([?workspaceId != null])" -o tsv 2>/dev/null)
-    diag_count="${diag_count:-0}"
-
-    if [ "$diag_count" -eq 0 ] 2>/dev/null; then
-        if [ -z "$workspace_id" ] || [ "$workspace_id" = "null" ]; then
-            workspace_id=$(az monitor log-analytics workspace show \
-                --resource-group "$RESOURCE_GROUP" \
-                --workspace-name "log-aks-audit" \
-                --query id -o tsv 2>/dev/null)
-        fi
-
-        if [ -z "$workspace_id" ] || [ "$workspace_id" = "null" ]; then
-            log_warn "5.1.2: Không xác định được Log Analytics Workspace để tạo Diagnostic Setting."
-            log_warn "Lệnh thủ công: az monitor diagnostic-settings create --resource $cluster_id --workspace <WORKSPACE_ID> ..."
-        elif ask_remediate "5.1.2: Bật AKS Diagnostic Settings về Log Analytics? [Y/n]: "; then
-            log_info "Đang tạo Diagnostic Setting cho AKS control plane..."
-            MSYS_NO_PATHCONV=1 az monitor diagnostic-settings create \
-                --name "aks-control-plane-logs" \
-                --resource "$cluster_id" \
-                --workspace "$workspace_id" \
-                --logs '[
-                    {"category":"kube-apiserver","enabled":true},
-                    {"category":"kube-audit","enabled":true},
-                    {"category":"kube-audit-admin","enabled":true},
-                    {"category":"kube-controller-manager","enabled":true},
-                    {"category":"kube-scheduler","enabled":true},
-                    {"category":"cluster-autoscaler","enabled":true},
-                    {"category":"cloud-controller-manager","enabled":true},
-                    {"category":"guard","enabled":true}
-                ]' \
-                --metrics '[{"category":"AllMetrics","enabled":true}]' \
-                --output none 2>/dev/null \
-            && log_pass "Đã bật Diagnostic Settings cho AKS. ✓" \
-            || log_fail "Tạo Diagnostic Settings thất bại. Kiểm tra quyền Microsoft.Insights/diagnosticSettings/write."
-        fi
-    else
-        log_info "5.1.2: Diagnostic Settings đã trỏ về Log Analytics. ✓"
-    fi
-
-    echo ""
-    # 5.1.3 - Azure Policy
-    local policy_enabled
-    policy_enabled=$(echo "$AKS_JSON" | jq -r '.addonProfiles.azurepolicy.enabled // "false"')
-    if [ "$policy_enabled" != "true" ]; then
-        if ask_remediate "5.1.3: Bật Azure Policy Add-on cho cluster? [Y/n]: "; then
-            log_info "Đang bật Azure Policy Add-on (có thể mất vài phút)..."
-            az aks enable-addons \
-                --addons azure-policy \
-                --name "$CLUSTER_NAME" \
-                --resource-group "$RESOURCE_GROUP" \
-                --output none 2>/dev/null \
-            && log_pass "Đã bật Azure Policy Add-on. ✓" \
-            || log_fail "Bật Azure Policy Add-on thất bại."
-        fi
-    else
-        log_info "5.1.3: Azure Policy Add-on đã bật. ✓"
     fi
 
     echo ""

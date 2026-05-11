@@ -16,7 +16,7 @@ report_init "4.5+4.6" "Secrets and Namespaces"
 # ─────────────────────────────────────────
 #  CẤU HÌNH
 # ─────────────────────────────────────────
-SYSTEM_NS_REGEX="^(kube-system|kube-public|kube-node-lease|calico-system|tigera-operator|gatekeeper-system)$"
+SYSTEM_NS_REGEX="^(kube-system|kube-public|kube-node-lease|calico-system|tigera-operator|gatekeeper-system|azure-arc|azure-extensions-usage-system)$"
 
 # ─────────────────────────────────────────
 #  1. LẤY DỮ LIỆU PODS
@@ -82,7 +82,7 @@ check_4_6_1() {
         return
     fi
 
-    local system_ns_pattern="^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$"
+    local system_ns_pattern="^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc|azure-extensions-usage-system)$"
     local custom_ns=""
     local custom_count=0
 
@@ -118,30 +118,28 @@ check_4_6_1() {
 #  4.6.3 - Ensure that the default namespace is not used
 #
 #  Lý do: Namespace 'default' không có các rào cản bảo mật mặc định.
-#  Kiểm tra: Tìm các pods chạy trong ns 'default' (trừ các service hệ thống nếu có).
+#  Kiểm tra: `kubectl get all -n default` — tìm TẤT CẢ resources (không chỉ pods).
 # ─────────────────────────────────────────
 check_4_6_3() {
     log_section "4.6.3 - Ensure that the default namespace is not used"
     log_info "Lý do: Sử dụng namespace 'default' gây khó khăn trong việc áp dụng RBAC và Network Policy"
 
-    local default_pods
-    default_pods=$(echo "$ALL_PODS_JSON" | jq -r '
-        .items[] | select(.metadata.namespace == "default") | 
-        .metadata.name
-    ' 2>/dev/null)
+    # Kiểm tra tất cả resources trong default (theo PDF: kubectl get all -n default)
+    local default_resources
+    default_resources=$(kubectl get all -n default --no-headers 2>/dev/null | grep -v '^service/kubernetes' | grep -v '^$')
 
-    if [ -z "$default_pods" ]; then
-        log_pass "4.6.3: Namespace 'default' đang trống ✓"
-        report_add "4.6.3" "PASS" "Namespace default khong co workloads"
+    if [ -z "$default_resources" ]; then
+        log_pass "4.6.3: Namespace 'default' chỉ có service 'kubernetes' (mặc định) ✓"
+        report_add "4.6.3" "PASS" "Namespace default chi co service kubernetes (mac dinh)"
     else
         local count
-        count=$(echo "$default_pods" | grep -c .)
-        log_fail "4.6.3: Phát hiện $count pod(s) đang chạy trong namespace 'default' ✗"
-        
+        count=$(echo "$default_resources" | wc -l)
+        log_fail "4.6.3: Phát hiện $count resource(s) trong namespace 'default' ✗"
+
         # In tối đa 5 cái
-        echo "$default_pods" | head -5 | while read -r line; do log_fail "  ↳ default/$line"; done
-        
-        report_add "4.6.3" "FAIL" "Phat hien $count pod trong namespace default"
+        echo "$default_resources" | head -5 | while read -r line; do log_fail "  ↳ $line"; done
+
+        report_add "4.6.3" "FAIL" "Phat hien $count resource trong namespace default"
     fi
 }
 
