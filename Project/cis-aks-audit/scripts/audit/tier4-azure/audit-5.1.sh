@@ -56,75 +56,52 @@ check_5_1_1() {
 }
 
 # ─────────────────────────────────────────
-#  5.1.2 - Ensure Diagnostic Setting is enabled to capture all logs
+#  5.1.2 - Minimize user access to Azure Container Registry (ACR)
 #
-#  Diagnostic Settings cho phép đẩy logs của Control Plane (API Server,
-#  Audit Logs, v.v.) vào Log Analytics để giám sát.
-#
-#  Kiểm tra: az monitor diagnostic-settings list
-#  Mong đợi: Ít nhất 1 setting đang bật và đẩy log vào workspace.
+#  Lý do: Tài khoản Admin của ACR sử dụng mật khẩu dùng chung tĩnh, dễ rò rỉ.
+#  Vô hiệu hóa nó để ép buộc xác thực định danh riêng biệt (Entra ID, Managed Identity).
 # ─────────────────────────────────────────
 check_5_1_2() {
-    log_section "5.1.2 - Ensure Diagnostic Setting is enabled to capture all logs"
-    log_info "Lý do: Thiếu Diagnostic Settings = mất dấu vết các hành động trên Control Plane"
+    log_section "5.1.2 - Minimize user access to Azure Container Registry (ACR)"
+    log_info "Lý do: Admin Account dùng chung gây mất khả năng kiểm toán lưu vết truy cập theo danh tính cá nhân"
 
-    load_aks_json
-    if [ -z "$AKS_JSON" ]; then
-        log_warn "5.1.2: Không lấy được thông tin cluster"
-        report_add "5.1.2" "WARN" "Khong lay duoc thong tin cluster"
+    local acr_list
+    acr_list=$(az acr list --query "[].{name:name, resourceGroup:resourceGroup, adminUserEnabled:adminUserEnabled}" --output json 2>/dev/null)
+
+    if [ -z "$acr_list" ] || [ "$acr_list" = "[]" ]; then
+        log_warn "5.1.2: Không phát hiện Azure Container Registry (ACR) nào trong Subscription hiện hành."
+        report_add "5.1.2" "PASS" "Khong phat hien thuc the ACR nao (Khong ton tai nguy co ranh gioi an ninh tu Admin Account)"
         return
     fi
 
-    # Lấy resource ID của cluster
-    local cluster_id
-    cluster_id=$(echo "$AKS_JSON" | jq -r '.id')
+    local acr_count
+    acr_count=$(echo "$acr_list" | jq '. | length' 2>/dev/null)
+    log_info "Tìm thấy $acr_count registry trong Subscription."
 
-    local diag_json
-    diag_json=$(MSYS_NO_PATHCONV=1 az monitor diagnostic-settings list --resource "$cluster_id" --output json 2>/dev/null)
+    local violating_acrs=""
+    local fail_count=0
 
-    if [ -z "$diag_json" ] || [ "$diag_json" = "[]" ]; then
-        log_fail "5.1.2: Chưa có Diagnostic Setting nào được cấu hình ✗"
-        report_add "5.1.2" "FAIL" "Chua co Diagnostic Setting nao duoc cau hinh"
-    else
-        local workspace_id
-        workspace_id=$(echo "$diag_json" | jq -r '.[0].workspaceId // ""')
+    while read -r acr_info; do
+        [ -z "$acr_info" ] && continue
+        local name
+        name=$(echo "$acr_info" | jq -r '.name')
+        local admin_enabled
+        admin_enabled=$(echo "$acr_info" | jq -r '.adminUserEnabled')
 
-        if [ -n "$workspace_id" ] && [ "$workspace_id" != "null" ]; then
-            log_pass "5.1.2: Đã tìm thấy Diagnostic Setting trỏ về workspace: $workspace_id ✓"
-            report_add "5.1.2" "PASS" "Diagnostic Setting dang bat"
+        if [ "$admin_enabled" = "true" ]; then
+            log_fail "  ✗ ACR '$name': Đang bật tài khoản Admin (Admin User = true)"
+            violating_acrs="${violating_acrs}${name} "
+            ((fail_count++))
         else
-            log_fail "5.1.2: Diagnostic Setting tồn tại nhưng chưa trỏ về Log Analytics Workspace ✗"
-            report_add "5.1.2" "FAIL" "Diagnostic Setting chua tro ve Workspace"
+            log_pass "  ✓ ACR '$name': Tài khoản Admin đã được vô hiệu hóa (Admin User = false)"
         fi
-    fi
-}
+    done < <(echo "$acr_list" | jq -c '.[]' 2>/dev/null)
 
-# ─────────────────────────────────────────
-#  5.1.3 - Ensure Azure Policy Add-on for Kubernetes is installed
-#
-#  Azure Policy Add-on cho phép quản lý và thực thi các chính sách
-#  bảo mật (như chặn pod chạy root) tập trung từ Azure Policy.
-#
-#  Kiểm tra: addonProfiles.azurepolicy.enabled
-#  Mong đợi: true
-# ─────────────────────────────────────────
-check_5_1_3() {
-    log_section "5.1.3 - Ensure Azure Policy Add-on for Kubernetes is installed"
-    log_info "Lý do: Azure Policy giúp thực thi các tiêu chuẩn bảo mật (PSP/PSA) tập trung"
-
-    load_aks_json
-
-    local policy_enabled
-    policy_enabled=$(echo "$AKS_JSON" | jq -r '.addonProfiles.azurepolicy.enabled // "false"')
-
-    log_info "Azure Policy Add-on enabled = $policy_enabled"
-
-    if [ "$policy_enabled" == "true" ]; then
-        log_pass "5.1.3: Azure Policy Add-on đang bật ✓"
-        report_add "5.1.3" "PASS" "Azure Policy Add-on dang bat"
+    if [ "$fail_count" -eq 0 ]; then
+        report_add "5.1.2" "PASS" "Tat ca cac ACR trong Subscription deu da duoc tat tai khoan Admin"
     else
-        log_fail "5.1.3: Azure Policy Add-on chưa được cài đặt ✗"
-        report_add "5.1.3" "FAIL" "Azure Policy Add-on chua bat"
+        violating_acrs=$(echo "$violating_acrs" | xargs)
+        report_add "5.1.2" "FAIL" "Phat hien $fail_count ACR van dang mo khoa Admin dung chung: $violating_acrs"
     fi
 }
 
@@ -207,7 +184,6 @@ main() {
     echo ""
     check_5_1_1
     check_5_1_2
-    check_5_1_3
     check_5_4_1
 
     report_print_summary

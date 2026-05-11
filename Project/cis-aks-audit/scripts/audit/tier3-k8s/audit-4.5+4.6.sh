@@ -4,7 +4,7 @@
 #
 # Controls:
 #   4.5.1 - Ưu tiên sử dụng Secret dưới dạng file (volume mount) thay vì env vars
-#   4.6.1 - Ensure that namespaces have ResourceQuotas
+#   4.6.1 - Create administrative boundaries between resources using namespaces
 #   4.6.3 - Không nên sử dụng namespace 'default' cho workloads
 # =====================================================================
 
@@ -64,17 +64,17 @@ check_4_5_1() {
 }
 
 # ─────────────────────────────────────────
-#  4.6.1 - Ensure that ResourceQuotas are applied to namespaces
+#  4.6.1 - Create administrative boundaries between resources using namespaces
 #
-#  Lý do: Không giới hạn resource có thể dẫn đến 1 namespace dùng cạn kiệt tài nguyên cluster.
+#  Lý do: Sử dụng namespaces để chia tách tài nguyên logic, tạo ranh giới quản trị
+#  và khoanh vùng ảnh hưởng (blast radius) an toàn cho từng môi trường/dự án.
 # ─────────────────────────────────────────
 check_4_6_1() {
-    log_section "4.6.1 - Ensure that ResourceQuotas are applied to namespaces"
-    log_info "Lý do: Giới hạn tài nguyên ở cấp namespace ngăn chặn việc 1 app ăn hết CPU/RAM của cluster"
+    log_section "4.6.1 - Create administrative boundaries between resources using namespaces"
+    log_info "Lý do: Tránh vận hành mọi workloads trong default namespace nhằm thắt chặt cơ chế phân quyền RBAC"
 
     local all_ns
-    all_ns=$(kubectl get ns --no-headers -o custom-columns=':metadata.name' 2>/dev/null \
-        | grep -vE '^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$')
+    all_ns=$(kubectl get ns --no-headers -o custom-columns=':metadata.name' 2>/dev/null)
 
     if [ -z "$all_ns" ]; then
         log_warn "4.6.1: Không lấy được danh sách namespaces"
@@ -82,28 +82,35 @@ check_4_6_1() {
         return
     fi
 
-    local fail_list=""
-    local pass_count=0
-    local fail_count=0
+    local system_ns_pattern="^(kube-system|kube-public|kube-node-lease|calico-system|calico-apiserver|tigera-operator|gatekeeper-system|azure-arc)$"
+    local custom_ns=""
+    local custom_count=0
 
     while IFS= read -r ns; do
         [ -z "$ns" ] && continue
-        local rq_count
-        rq_count=$(kubectl get resourcequota -n "$ns" --no-headers 2>/dev/null | grep -c .)
-        if [ "$rq_count" -eq 0 ]; then
-            log_fail "  ✗ Namespace '$ns': không có ResourceQuota"
-            fail_list="${fail_list}${ns} "
-            ((fail_count++))
-        else
-            log_pass "  ✓ Namespace '$ns': $rq_count ResourceQuota"
-            ((pass_count++))
+        # Loại bỏ namespaces hệ thống
+        if [[ "$ns" =~ $system_ns_pattern ]]; then
+            continue
         fi
+        # Loại bỏ namespace default
+        if [ "$ns" = "default" ]; then
+            continue
+        fi
+        custom_ns="${custom_ns}${ns} "
+        ((custom_count++))
     done <<< "$all_ns"
 
-    if [ "$fail_count" -eq 0 ]; then
-        report_add "4.6.1" "PASS" "Tat ca cac namespace deu co ResourceQuota"
+    # Định dạng lại chuỗi kết quả
+    custom_ns=$(echo "$custom_ns" | xargs)
+
+    log_info "Tìm thấy $custom_count namespace tùy chỉnh: $custom_ns"
+
+    if [ "$custom_count" -gt 0 ]; then
+        log_pass "4.6.1: Đã thiết lập $custom_count phân vùng quản trị bằng custom namespaces ✓"
+        report_add "4.6.1" "PASS" "Da tao $custom_count ranh gioi quan tri: $custom_ns"
     else
-        report_add "4.6.1" "FAIL" "$fail_count namespace thieu ResourceQuota: ${fail_list% }"
+        log_fail "4.6.1: Chưa tạo bất kỳ namespace tùy chỉnh nào (mọi workloads đang dồn vào default) ✗"
+        report_add "4.6.1" "FAIL" "Moi tai nguyen dang nam chung trong default namespace, thieu ranh gioi quan tri logic"
     fi
 }
 
