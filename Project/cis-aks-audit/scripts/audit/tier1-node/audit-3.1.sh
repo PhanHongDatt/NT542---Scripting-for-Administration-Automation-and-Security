@@ -16,6 +16,45 @@ source "$SCRIPT_DIR/../../helpers/common.sh"
 report_init "3.1" "Worker Node File Permissions"
 
 # ─────────────────────────────────────────
+#  HÀM: Kiểm tra kubelet service đang chạy trước khi audit
+#
+#  CIS mô tả điều kiện "If kubelet is running..." nên cần xác nhận
+#  trạng thái kubelet trước khi kết luận permission/ownership PASS.
+# ─────────────────────────────────────────
+check_kubelet_active() {
+    log_section "Pre-check - Kiểm tra trạng thái kubelet service"
+
+    local status
+    status=$(node_exec "systemctl is-active kubelet 2>/dev/null || true" | head -1 | xargs)
+
+    if [ "$status" = "active" ]; then
+        log_pass "Kubelet service đang active (running) ✓"
+        return 0
+    fi
+
+    if [ -z "$status" ] || [ "$status" = "NO_POD" ] || [ "$status" = "ERROR" ]; then
+        local kubelet_process
+        kubelet_process=$(node_exec "ps -ef | grep -E '/opt/bin/kubelet|/usr/bin/kubelet|[[:space:]]kubelet[[:space:]]' | grep -v grep | head -1")
+
+        if [ -n "$kubelet_process" ] && [ "$kubelet_process" != "NO_POD" ] && [ "$kubelet_process" != "ERROR" ]; then
+            log_warn "Không xác định được trạng thái qua systemctl, nhưng tìm thấy process kubelet; tiếp tục audit."
+            return 0
+        fi
+    fi
+
+    log_warn "Kubelet service không active (status: ${status:-unknown}); bỏ qua các control 3.1.x trên node này."
+    return 1
+}
+
+mark_3_1_controls_skipped() {
+    local reason=$1
+    report_add "3.1.1" "WARN" "$reason"
+    report_add "3.1.2" "WARN" "$reason"
+    report_add "3.1.3" "WARN" "$reason"
+    report_add "3.1.4" "WARN" "$reason"
+}
+
+# ─────────────────────────────────────────
 #  HÀM: Lấy path kubeconfig thực tế từ kubelet process
 #  Kubelet được start với --kubeconfig=/path → tìm động
 #  thay vì hardcode để tránh sai trên các phiên bản AKS khác nhau
@@ -166,6 +205,12 @@ main() {
 
         # Không thiết lập được context node thì bỏ qua node đó và tiếp tục node còn lại.
         node_setup "$node" || { log_warn "Bỏ qua node $node."; continue; }
+
+        if ! check_kubelet_active; then
+            mark_3_1_controls_skipped "Kubelet service khong active; bo qua audit tren node $node"
+            node_cleanup
+            continue
+        fi
 
         # Mapping control CIS 3.1.1-3.1.4 vào từng hàm check tương ứng.
         check_file_permission "3.1.1" "/var/lib/kubelet/kubeconfig" 644
