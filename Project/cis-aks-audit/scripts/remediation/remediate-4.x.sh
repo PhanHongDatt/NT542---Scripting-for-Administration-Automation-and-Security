@@ -8,6 +8,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../helpers/common.sh"
 MANIFESTS_DIR="$SCRIPT_DIR/../../k8s-manifests"
+BACKUP_DIR="$MANIFESTS_DIR/.backup-$(date +%Y%m%d-%H%M%S)"
 
 main() {
     echo ""
@@ -19,6 +20,11 @@ main() {
     echo ""
 
     log_section "ĐANG TỰ ĐỘNG SỬA LỖI SECTION 4.x"
+
+    # #2: Backup trước khi sửa
+    mkdir -p "$BACKUP_DIR"
+    cp "$MANIFESTS_DIR"/*.yaml "$BACKUP_DIR/" 2>/dev/null
+    log_info "Đã backup manifest gốc vào: $BACKUP_DIR"
 
     # 1. Sửa lỗi 03-busybox-bad.yaml (4.2.x)
     local file_busybox="$MANIFESTS_DIR/03-busybox-bad.yaml"
@@ -125,13 +131,35 @@ EOF
     kubectl delete pod busybox-bad -n staging --ignore-not-found=true
     kubectl delete pod app-with-env-secret -n dev --ignore-not-found=true
 
-    # 4. Apply lại vào cluster
+    # 4. Apply lại vào cluster (#3: chỉ apply file đã sửa)
     if ask_remediate "Apply các file manifest đã sửa lỗi vào cluster? [Y/n]: "; then
         log_info "Đang apply..."
-        kubectl apply -f "$MANIFESTS_DIR/"
-        log_pass "Đã apply thành công lên cluster! ✓"
+        local apply_ok=true
+
+        if [ -f "$file_busybox" ]; then
+            kubectl apply -f "$file_busybox" || apply_ok=false
+        fi
+        if [ -f "$file_secret" ]; then
+            kubectl apply -f "$file_secret" || apply_ok=false
+        fi
+
+        if [ "$apply_ok" = true ]; then
+            log_pass "Đã apply thành công lên cluster! ✓"
+
+            # #4: Verify pods sau apply
+            log_info "Đang verify pods..."
+            kubectl wait pod busybox-bad -n staging --for=condition=Ready --timeout=30s 2>/dev/null \
+                && log_pass "Pod busybox-bad: Ready ✓" \
+                || log_warn "Pod busybox-bad: chưa Ready sau 30s"
+            kubectl wait pod app-with-env-secret -n dev --for=condition=Ready --timeout=30s 2>/dev/null \
+                && log_pass "Pod app-with-env-secret: Ready ✓" \
+                || log_warn "Pod app-with-env-secret: chưa Ready sau 30s"
+        else
+            log_fail "Apply thất bại. Khôi phục từ backup:"
+            log_warn "  kubectl apply -f $BACKUP_DIR/"
+        fi
     else
-        log_warn "Bỏ qua việc apply lên cluster. Lệnh thủ công: kubectl apply -f k8s-manifests/"
+        log_warn "Bỏ qua việc apply lên cluster. Lệnh thủ công: kubectl apply -f $file_busybox && kubectl apply -f $file_secret"
     fi
 
     echo ""

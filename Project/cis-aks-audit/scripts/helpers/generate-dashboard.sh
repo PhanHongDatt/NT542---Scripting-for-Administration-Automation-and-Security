@@ -114,13 +114,11 @@ V2_RATE=0
 TAB_GUIDE="
 <h4>Hướng dẫn chạy hệ thống</h4>
 <p><strong>1. Khởi chạy toàn bộ Audit (Lần 1):</strong></p>
-<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/run-all.sh</code></pre>
+<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/run-audit-before.sh</code></pre>
 <p><strong>2. Thực hiện Remediation tự động:</strong></p>
-<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/remediation/remediate-3.x.sh
-bash scripts/remediation/remediate-4.x.sh
-bash scripts/remediation/remediate-5.x.sh</code></pre>
+<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/run-remediate.sh</code></pre>
 <p><strong>3. Chạy Audit kiểm chứng lại (Lần 2):</strong></p>
-<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/run-audit-v2.sh</code></pre>
+<pre class='bg-dark text-light p-3 rounded'><code>bash scripts/run-audit-after.sh</code></pre>
 "
 
 TAB_VIDEO="
@@ -224,7 +222,7 @@ EOF
 
 if [ -z "$V2_ROWS" ]; then
 cat <<EOF >> "$DASHBOARD_FILE"
-            <div class='alert alert-warning mt-3'>Chưa có báo cáo V2. Vui lòng chạy <code>bash scripts/run-audit-v2.sh</code> sau khi hoàn tất sửa lỗi.</div>
+            <div class='alert alert-warning mt-3'>Chưa có báo cáo V2. Vui lòng chạy <code>bash scripts/run-audit-after.sh</code> sau khi hoàn tất sửa lỗi.</div>
 EOF
 else
 cat <<EOF >> "$DASHBOARD_FILE"

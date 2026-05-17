@@ -1,25 +1,26 @@
 #!/bin/bash
 # =====================================================================
-# run-audit-v2.sh - Master Orchestrator cho lần quét số 2 (AFTER)
-# Chạy toàn bộ audit sau remediation và lưu report với hậu tố -v2.
+# run-audit-before.sh - Master Orchestrator cho lần quét số 1 (BEFORE)
+# Chạy toàn bộ audit trước remediation.
 # =====================================================================
 
+# Lấy đường dẫn tuyệt đối của thư mục scripts
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT_DIR="$PROJECT_ROOT/scripts"
 REPORT_DIR="$PROJECT_ROOT/report"
 
-export AUDIT_RUN_VERSION="v2"
-
+# Nạp thư viện dùng chung để lấy màu sắc và hàm log
 source "$SCRIPT_DIR/helpers/common.sh"
 
 clear
 echo -e "${C_BLUE}╔══════════════════════════════════════════════════════════════╗${C_RESET}"
-echo -e "${C_BLUE}║        CIS AKS BENCHMARK V1.8.0 - AUDIT LẦN 2 (AFTER)       ║${C_RESET}"
-echo -e "${C_BLUE}║        Kiểm tra lại sau khi thực hiện remediation            ║${C_RESET}"
+echo -e "${C_BLUE}║        CIS AKS BENCHMARK V1.8.0 - AUDIT LẦN 1 (BEFORE)      ║${C_RESET}"
+echo -e "${C_BLUE}║        Kiểm tra trước khi thực hiện remediation              ║${C_RESET}"
 echo -e "${C_BLUE}╚══════════════════════════════════════════════════════════════╝${C_RESET}"
 echo -e "  Bắt đầu quét lúc: $(date '+%Y-%m-%d %H:%M:%S')"
 echo -e "  Thư mục báo cáo: ${C_CYAN}$REPORT_DIR${C_RESET}"
 
+# 1. Kiểm tra môi trường
 log_section "KIỂM TRA ĐIỀU KIỆN TIÊN QUYẾT"
 for tool in az kubectl jq; do
     if ! command -v "$tool" &>/dev/null; then
@@ -35,6 +36,7 @@ if ! az account show &>/dev/null; then
 fi
 log_pass "Đã kết nối tài khoản Azure"
 
+# 2. Danh sách các script cần chạy (theo thứ tự Tier)
 AUDIT_SCRIPTS=(
     "audit/tier1-node/audit-3.1.sh"
     "audit/tier2-kubelet/audit-3.2.sh"
@@ -46,27 +48,31 @@ AUDIT_SCRIPTS=(
     "audit/tier4-azure/audit-5.4.sh"
 )
 
+# 3. Thực thi
 TOTAL_SCRIPTS=${#AUDIT_SCRIPTS[@]}
 CURRENT=1
 
 for script_path in "${AUDIT_SCRIPTS[@]}"; do
     FULL_PATH="$SCRIPT_DIR/$script_path"
-
+    
     if [ -f "$FULL_PATH" ]; then
-        log_section "[$CURRENT/$TOTAL_SCRIPTS] ĐANG CHẠY V2: $script_path"
+        log_section "[$CURRENT/$TOTAL_SCRIPTS] ĐANG CHẠY: $script_path"
         bash "$FULL_PATH"
     else
         log_warn "Không tìm thấy script: $script_path - Bỏ qua."
     fi
-
+    
     ((CURRENT++))
     echo -e "\n--------------------------------------------------------------"
 done
 
+# 4. Tạo Dashboard tổng hợp
 bash "$SCRIPT_DIR/helpers/generate-dashboard.sh"
 
-log_section "HOÀN TẤT QUÁ TRÌNH QUÉT LẦN 2"
-echo -e "  Tất cả báo cáo V2 đã được lưu tại: ${C_CYAN}$REPORT_DIR${C_RESET}"
+# 5. Tổng kết
+log_section "HOÀN TẤT QUÁ TRÌNH QUÉT"
+echo -e "  Tất cả báo cáo đã được lưu tại: ${C_CYAN}$REPORT_DIR${C_RESET}"
 echo -e "  DASHBOARD TỔNG HỢP: ${C_GREEN}$REPORT_DIR/dashboard.html${C_RESET}"
+echo -e "  Vui lòng mở Dashboard trong trình duyệt để xem cái nhìn tổng thể."
 echo -e "  Kết thúc lúc: $(date '+%Y-%m-%d %H:%M:%S')"
 echo -e "${C_BLUE}══════════════════════════════════════════════════════════════${C_RESET}\n"

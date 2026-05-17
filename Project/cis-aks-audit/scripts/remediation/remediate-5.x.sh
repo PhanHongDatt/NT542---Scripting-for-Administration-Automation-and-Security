@@ -62,6 +62,8 @@ main() {
                 log_warn "az aks update --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --api-server-authorized-ip-ranges <YOUR_IP>/32"
             else
                 log_info "IP của bạn: $my_ip"
+                log_warn "Lưu ý: Nếu mất kết nối sau khi set, chạy lệnh sau để mở lại:"
+                log_warn "  az aks update --name $CLUSTER_NAME -g $RESOURCE_GROUP --api-server-authorized-ip-ranges 0.0.0.0/0"
                 log_info "Đang thiết lập IP..."
                 az aks update \
                     --name "$CLUSTER_NAME" \
